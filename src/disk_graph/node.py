@@ -1,7 +1,7 @@
 class node:
-    def __init__(pk, sq3):
+    def __init__(pk, db):
         self.pk = pk
-        self.sq3 = sq3
+        self.db = db
     
     def value():
         return
@@ -9,5 +9,5 @@ class node:
     def add():
         return self
     
-    def neighbors():
+    def next():
         return self
