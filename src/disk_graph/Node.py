@@ -1,4 +1,4 @@
-class node:
+class Node:
     def __init__(pk, db):
         self.pk = pk
         self.db = db
