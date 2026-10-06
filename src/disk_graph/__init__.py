@@ -16,23 +16,39 @@ class graph:
         graph_path.parent.mkdir(parents=True, exist_ok=True)
         self.db = db.connect(graph_path)
         cur = self.db.cursor()
+        
+        self.updateTables()
+    
+    # We will create the Node table later as it is dependent on what the user has in config.json
+    def createTables():
+        self.db.executescript("""
+            PRAGMA foreign_keys = ON;
+            CREATE TABLE IF NOT EXISTS node_ptr (
+                id INTEGER PRIMARY KEY AUTOINCREMENT
+            );
+            CREATE TABLE IF NOT EXISTS verticies (
+                id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                from INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+                to   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+            );
+        """)
+    
+    def updateTables():
+        self.createTables()
 
         if not self.config_path.exists():
             self.config_path.touch()
             with open(config_path, "w") as file:
                 json.dump(default_config)
-        
-        self.createTables()
 
-        existing_columns = cur.execute("SELECT * FROM pragma_table_info('node');")
+        existing_columns = self.db.execute("SELECT * FROM pragma_table_info('node');")
         with open(config_path, "r", encoding="utf-8") as file:
             existing_config = json.load(file)
         
-
         ## calculate missing columns
         ## Update Node table with missing columns
         ## Update config.json
-
+    
     def createNode():
         cur = self.db.cursor()
 
@@ -49,17 +65,3 @@ class graph:
 
         """)
         return Node()
-    
-    # We will create the Node table later as it depends on what the user has in config.json
-    def createTables():
-        self.db.executescript("""
-            PRAGMA foreign_keys = ON;
-            CREATE TABLE IF NOT EXISTS node_ptr (
-                id INTEGER PRIMARY KEY AUTOINCREMENT
-            );
-            CREATE TABLE IF NOT EXISTS verticies (
-                id   INTEGER PRIMARY KEY AUTOINCREMENT,
-                from INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
-                to   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
-            );
-        """)
