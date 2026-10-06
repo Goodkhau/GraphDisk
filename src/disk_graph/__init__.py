@@ -1,34 +1,43 @@
 import sqlite3 as db
 from pathlib import Path
+import json
 
 from Node import Node
 
-
 graph_dir = Path(__file__).parent.parent
+default_config = {}
 
 class graph:
     def __init__(name, remove_columns = False):
-        folder_path = Path.joinpath(graph_dir, name)
-        config_path = Path.joinpath(folder_path, "config.json")
-        graph_path = Path.joinpath(folder_path, "graph.db")
+        self.folder_path = Path.joinpath(graph_dir, name)
+        self.config_path = Path.joinpath(folder_path, "config.json")
+        self.graph_path = Path.joinpath(folder_path, "graph.db")
 
         graph_path.parent.mkdir(parents=True, exist_ok=True)
         self.db = db.connect(graph_path)
         cur = self.db.cursor()
 
+        if not self.config_path.exists():
+            self.config_path.touch()
+            with open(config_path, "w") as file:
+                json.dump(default_config)
+        
         self.createTables()
 
-        if not config_path.exists():
-            config_path.touch()
+        existing_columns = cur.execute("SELECT * FROM pragma_table_info('node');")
+        with open(config_path, "r", encoding="utf-8") as file:
+            existing_config = json.load(file)
         
 
-        ## Create tables, config.json
         ## calculate missing columns
         ## Update Node table with missing columns
         ## Update config.json
 
     def createNode():
         cur = self.db.cursor()
+
+
+
         pk = cur.lastrowid
         return Node(pk, self.db)
 
