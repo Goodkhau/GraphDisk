@@ -4,11 +4,21 @@ import json
 from base.db.pysqlite3 import pysqlite3 as db
 from Node import Node
 
-graph_dir = Path(__file__).parent.parent
 default_config = {}
 
+def calculateRowCreation(existing_columns, existing_config):
+    present_columns = [(column.name, column.type) for column in existing_columns if column.name in existing_config.keys()]
+    missing_columns = [(config_name, config_type) for config_name, config_type in existing_config if not any(
+        config_name == column.name for column in existing_columns
+    )]
+
+    return (
+        [column for column in existing_columns if column.name not in existing_config.keys()],
+        missing_columns + present_columns
+    )
+
 class graph:
-    def __init__(name, remove_columns = False):
+    def __init__(name, graph_dir = Path(__file__).parent.parent):
         self.folder_path = Path.joinpath(graph_dir, name)
         self.config_path = Path.joinpath(folder_path, "config.json")
         self.db = db(name)
@@ -28,19 +38,12 @@ class graph:
         
         with open(config_path, "r", encoding="utf-8") as file:
             existing_config = json.load(file)
-        
 
-        new_columns, new_config = self.calculateRowCreation(existing_columns, existing_config)
+        new_columns, updated_config = self.calculateRowCreation(existing_columns, existing_config)
 
         ## calculate missing columns
         ## Update Node table with missing columns
         ## Update config.json
-    
-    def calculateRowCreation(existing_columns, existing_config):
-        return (
-            [column for column in existing_columns if column.name not in existing_config.keys()],
-            [(col_name, col_type) for col_name, col_type in existing_config if any(col_name == column.name for column in existing_columns)]
-        )
     
     def createNode():
         cur = self.db.cursor()
