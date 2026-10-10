@@ -1,12 +1,12 @@
 from pathlib import Path
 import json
 
-from base.db.pysqlite3 import pysqlite3 as db
-from Node import Node
+from src.disk_graph.db.pysqlite3 import pysqlite3 as db
+from src.disk_graph.Node import Node
 
 default_config = {}
 
-def calculateRowCreation(existing_columns, existing_config):
+def calculateRowCreation(existing_columns: list[dict], existing_config: dict):
     present_columns = [(column.name, column.type) for column in existing_columns if column.name in existing_config.keys()]
     missing_columns = [(config_name, config_type) for config_name, config_type in existing_config if not any(
         config_name == column.name for column in existing_columns
@@ -34,7 +34,7 @@ class graph:
         if not self.config_path.exists():
             self.config_path.touch()
             with open(config_path, "w") as file:
-                json.dump(default_config)
+                json.dump(default_config, file)
         
         with open(config_path, "r", encoding="utf-8") as file:
             existing_config = json.load(file)

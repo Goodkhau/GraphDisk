@@ -1,8 +1,12 @@
 import sqlite3 as db
+from pathlib import Path
 
-from base.db.database_interface import database_interface
+from src.disk_graph.db.database_interface import database_interface
 
 graph_dir = Path(__file__).parent.parent.parent.parent
+
+def dict_factory(cursor, row):
+    return {col[0]: val for col, val in zip(cursor.description, row)}
 
 class pysqlite3(database_interface):
     def __init__(name):
@@ -25,4 +29,5 @@ class pysqlite3(database_interface):
         """)
     
     def getTableColumns():
-        return self.db.execute("SELECT * FROM pragma_table_info('node');")
+        self.db.row_factory = dict_factory
+        return self.db.execute("SELECT * FROM pragma_table_info('node');").fetchone()
