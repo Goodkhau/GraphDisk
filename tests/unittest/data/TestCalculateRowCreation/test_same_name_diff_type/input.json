@@ -1,0 +1,13 @@
+{
+    "columns": [{
+        "cid": 1,
+        "name": "same_name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+    }],
+    "config": {
+        "same_name": "INTEGER"
+    }
+}

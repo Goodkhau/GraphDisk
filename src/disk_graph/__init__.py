@@ -8,12 +8,12 @@ default_config = {}
 
 def calculateRowCreation(existing_columns: list[dict], existing_config: dict):
     present_columns = [{'name': column['name'], 'type': column['type']} for column in existing_columns]
-    missing_columns = [{'name': config_name, 'type': config_type} for config_name, config_type in existing_config if not any(
+    missing_columns = [{'name': config_name, 'type': config_type} for config_name, config_type in existing_config.items() if not any(
         config_name == column['name'] for column in existing_columns
     )]
 
     return (
-        [column for column in existing_columns if column['name'] in existing_config.keys()],
+        missing_columns,
         present_columns + missing_columns
     )
 
