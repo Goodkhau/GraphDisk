@@ -1,4 +1,7 @@
 {
     "new_columns": [],
-    "updated_config": []
+    "updated_config": [{
+        "name": "id",
+        "type": "TEXT"
+    }]
 }

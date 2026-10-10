@@ -1,4 +1,11 @@
 {
-    "columns": {},
+    "columns": [{
+        "cid": 1,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+    }],
     "config": {}
 }
