@@ -31,3 +31,37 @@ class pysqlite3(database_interface):
     def getTableColumns():
         self.db.row_factory = dict_factory
         return self.db.execute("SELECT * FROM pragma_table_info('node');").fetchone()
+
+    def createNodeColumns(self, new_columns: list[dict]):
+        if not len(self.getTableColumns()):
+            primary_key = [column for column in new_columns if column['name'] == 'id']
+            if not len(primary_key) == 1:
+                raise Exception(
+                    f"Expecting unique indentifier 'id' column in config.json"
+                )
+            
+            self.db.execute(f"""
+                CREATE TABLE IF NOT EXISTS node (
+                    id {primary_key[0]['type']} PRIMARY KEY
+                );
+                ALTER TABLE node_ptr
+                ADD COLUMN id {primary_key[0]['type']}
+                REFERENCES node(id);
+            """)
+
+        successful_creation = []
+        failed_creation = []
+        for column in new_columns:
+            try:
+                self.db.execute(f"""
+                    ALTER TABLE node
+                    ADD COLUMN {column['name']} {column['type']}
+                """)
+                successful_creation.append(column['name'])
+            except:
+                failed_creation.append(column['name'])
+
+        return (
+            successful_creation,
+            failed_creation
+        )

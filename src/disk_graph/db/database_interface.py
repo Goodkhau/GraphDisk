@@ -1,15 +1,23 @@
 class database_interface:
     def __init__(name=''):
         raise NotImplementedError(
-            f"{type(self).__name__}: Constructor was not implemented."
+            self.notCreatedMessage(self._testMethodName)
         )
+    
+    def notCreatedMessage(function_name):
+        return f"{type(self).__name__}: {function_name} was not implemented."
     
     def createTables():
         raise NotImplementedError(
-            f"{type(self).__name__}: createTables function was not implemented."
+            self.notCreatedMessage(self._testMethodName)
         )
     
     def getTableColumns(name):
         raise NotImplementedError(
-            f"{type(self).__name__}: getColumns function was not implemented."
+            self.notCreatedMessage(self._testMethodName)
+        )
+
+    def createNodeColumns(new_columns: list[dict]):
+        raise NotImplementedError(
+            self.notCreatedMessage(self._testMethodName)
         )
