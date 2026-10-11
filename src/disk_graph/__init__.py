@@ -1,10 +1,15 @@
 from pathlib import Path
 import json
 
-from src.disk_graph.db.pysqlite3 import pysqlite3 as db
+from src.disk_graph.db.pysqlite3.interface import pysqlite3_interface as db
 from src.disk_graph.Node import Node
 
-default_config = {}
+default_config = {
+    "message": """Create the columns you need here in JSON where the field will be the name and the value will be the type of the column.
+string -> TEXT
+number -> INTEGER
+    """
+}
 
 def calculateRowCreation(existing_columns: list[dict], existing_config: dict) -> tuple(list[dict], list[dict]):
     present_columns = [{'name': column['name'], 'type': column['type']} for column in existing_columns]
@@ -17,26 +22,30 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
         present_columns + missing_columns
     )
 
-class graph:
-    def __init__(name, graph_dir = Path(__file__).parent.parent):
-        self.folder_path = Path.joinpath(graph_dir, name)
-        self.config_path = Path.joinpath(folder_path, "config.json")
-        self.db = db(name)
+class Graph:
+    def __init__(self, name, graphs_folder = Path(__file__).parent.parent):
+        self.graph_path = Path.joinpath(graphs_folder, name)
+        self.config_path = Path.joinpath(self.graph_path, "config.json")
+
+        self.graph_path.mkdir(parents=True, exist_ok=True)
+        self.db = db(name, graphs_folder=graphs_folder)
 
         self.updateTables()
     
-    def updateTables():
+    def updateTables(self):
         self.db.createTables()
         existing_columns = self.db.getTableColumns('node')
 
         if not self.config_path.exists():
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            print("Config Path: ", self.config_path)
             self.config_path.touch()
-            with open(config_path, "w") as file:
-                json.dump(default_config, file)
+            with open(self.config_path, "w") as file:
+                json.dump(default_config, file, indent=4)
 
-        with open(config_path, "r", encoding="utf-8") as file:
+        with open(self.config_path, "r", encoding="utf-8") as file:
             existing_config = json.load(file)
+        existing_config.pop("message", None)
 
         new_columns, updated_config = calculateRowCreation(existing_columns, existing_config)
 
@@ -44,10 +53,10 @@ class graph:
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
 
-        with open(config_path, "w") as file:
+        with open(self.config_path, "w") as file:
             json.dump(updated_config, file)
     
-    def createNode():
+    def createNode(self):
         cur = self.db.cursor()
 
 

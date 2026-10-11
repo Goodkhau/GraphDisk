@@ -1,5 +1,5 @@
 class database_interface:
-    def __init__(name=''):
+    def __init__(self, name=''):
         raise NotImplementedError(
             self.notCreatedMessage(self._testMethodName)
         )
