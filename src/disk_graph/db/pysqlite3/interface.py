@@ -1,7 +1,10 @@
 import sqlite3 as db
 from pathlib import Path
+from typing import Literal
 
 from src.disk_graph.db.database_interface import database_interface
+
+valid_column_types = Literal["INTEGER", "REAL", "TEXT", "BLOB"]
 
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
@@ -13,12 +16,15 @@ class pysqlite3_interface(database_interface):
 
         self.db = db.connect(self.database_file)
 
-    # We will create the Node table later as it is dependent on what the user has in config.json
-    def createTables(self):
-        self.db.executescript("""
+    def createTables(self, node_pk_type = "INTEGER"):
+        self.db.executescript(f"""
             PRAGMA foreign_keys = ON;
+            CREATE TABLE IF NOT EXISTS node (
+                id {node_pk_type} PRIMARY KEY
+            ) STRICT;
             CREATE TABLE IF NOT EXISTS node_ptr (
-                id INTEGER PRIMARY KEY AUTOINCREMENT
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                node    {node_pk_type} NOT NULL REFERENCES node(id) ON DELETE CASCADE
             );
             CREATE TABLE IF NOT EXISTS verticies (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,22 +39,6 @@ class pysqlite3_interface(database_interface):
         #return column_info if column_info != None else []
 
     def createNodeColumns(self, new_columns: list[dict]):
-        if not len(self.getTableColumns('node')):
-            primary_key = [column for column in new_columns if column['name'] == 'id']
-            if not len(primary_key) == 1:
-                raise Exception(
-                    f"Expecting unique indentifier 'id' column in config.json"
-                )
-            
-            self.db.executescript(f"""
-                CREATE TABLE IF NOT EXISTS node (
-                    id {primary_key[0]['type']} PRIMARY KEY
-                );
-                ALTER TABLE node_ptr
-                ADD COLUMN node {primary_key[0]['type']}
-                REFERENCES node(id);
-            """)
-
         successful_creation = []
         failed_creation = []
         for column in new_columns:

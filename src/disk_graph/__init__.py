@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-from src.disk_graph.db.pysqlite3.interface import pysqlite3_interface as db
+from src.disk_graph.db.pysqlite3.interface import valid_column_types, pysqlite3_interface as db
 from src.disk_graph.Node import Node
 
 default_config = {
@@ -23,17 +23,17 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
     )
 
 class Graph:
-    def __init__(self, name, graphs_folder = Path(__file__).parent.parent):
+    def __init__(self, name, node_pk_type: valid_column_types = "INTEGER", graphs_folder = Path(__file__).parent.parent):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
         self.graph_path.mkdir(parents=True, exist_ok=True)
         self.db = db(name, graphs_folder=graphs_folder)
 
+        self.db.createTables(node_pk_type=node_pk_type)
         self.updateTables()
     
     def updateTables(self):
-        self.db.createTables()
         existing_columns = self.db.getTableColumns('node')
 
         if not self.config_path.exists():

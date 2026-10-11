@@ -1,3 +1,5 @@
+import pytest
+
 from src.disk_graph import calculateRowCreation
 
 def check(case):
@@ -6,15 +8,18 @@ def check(case):
     assert new_columns == output['new_columns']
     assert updated_config == output['updated_config']
 
-
+@pytest.mark.unit
 def test_empty_config(case):
     check(case)
 
+@pytest.mark.unit
 def test_new_column_in_config(case):
     check(case)
 
+@pytest.mark.unit
 def test_same_name_type(case):
     check(case)
 
+@pytest.mark.unit
 def test_same_name_diff_type(case):
     check(case)
