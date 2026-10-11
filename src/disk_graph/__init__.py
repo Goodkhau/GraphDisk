@@ -5,7 +5,7 @@ from src.disk_graph.db.pysqlite3.interface import pysqlite3_interface as db
 from src.disk_graph.Node import Node
 
 default_config = {
-    "message": """Create the columns you need here in JSON where the field will be the name and the value will be the type of the column.
+    "message": """Create the columns you need here in JSON where the field will be the name and the value will be the type of the column. An "id" field is required
 string -> TEXT
 number -> INTEGER
     """
@@ -19,7 +19,7 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
 
     return (
         missing_columns,
-        present_columns + missing_columns
+        { column['name']: column['type'] for column in present_columns + missing_columns }
     )
 
 class Graph:
@@ -38,7 +38,6 @@ class Graph:
 
         if not self.config_path.exists():
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            print("Config Path: ", self.config_path)
             self.config_path.touch()
             with open(self.config_path, "w") as file:
                 json.dump(default_config, file, indent=4)

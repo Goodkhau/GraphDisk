@@ -3,11 +3,8 @@
         "name": "new_column",
         "type": "INTEGER"
     }],
-    "updated_config": [{
-        "name": "id",
-        "type": "TEXT"
-    }, {
-        "name": "new_column",
-        "type": "INTEGER"
-    }]
+    "updated_config": {
+        "id": "TEXT",
+        "new_column": "INTEGER"
+    }
 }

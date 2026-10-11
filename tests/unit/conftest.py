@@ -7,7 +7,7 @@ DATA_DIR = Path(__file__).parent / "data"
 @pytest.fixture
 def case(request):
     filename = Path(request.module.__file__).name
-    return get_data(filename, request.node.name)
+    return get_data(test_name=filename, scenario=request.node.name)
 
 def get_data(test_name, scenario):
     path = DATA_DIR / test_name / scenario
