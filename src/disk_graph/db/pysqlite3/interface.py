@@ -36,7 +36,6 @@ class pysqlite3_interface(database_interface):
     def getTableColumns(self, name):
         self.db.row_factory = dict_factory
         return self.db.execute(f"SELECT * FROM pragma_table_info('{name}');").fetchall()
-        #return column_info if column_info != None else []
 
     def createNodeColumns(self, new_columns: list[dict]):
         successful_creation = []
@@ -48,7 +47,7 @@ class pysqlite3_interface(database_interface):
             try:
                 self.db.execute(f"""
                     ALTER TABLE node
-                    ADD COLUMN {column['name']} {column['type']}
+                    ADD COLUMN {column['name']} {column['type']};
                 """)
                 successful_creation.append(column['name'])
             except:
