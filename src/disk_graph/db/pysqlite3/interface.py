@@ -9,6 +9,14 @@ valid_column_types = Literal["INTEGER", "REAL", "TEXT", "BLOB"]
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
 
+def calculateRowInsertion(columns, row_data):
+    insert_data = (row_data.get(column['name'] for column in columns))
+
+    return (
+        "(" + ",".join("?" * len(t)) + ")",
+        insert_data
+    )
+
 class pysqlite3_interface(database_interface):
     def __init__(self, name, graphs_folder):
         self.graph_path = Path.joinpath(graphs_folder, name)
@@ -57,3 +65,18 @@ class pysqlite3_interface(database_interface):
             successful_creation,
             failed_creation
         )
+
+    def insertNode(self, row_data: dict):
+        columns = self.getTableColumns('node')
+
+        if row_data.get('id') == None:
+            return None
+
+        placeholder, insert_data = self.calculateRowInsertion()
+
+        self.db.execute(f"""
+            INSERT INTO node 
+            VALUES {placeholder}
+        """, insert_data)
+
+        return row_data.get('id')

@@ -55,12 +55,8 @@ class Graph:
         with open(self.config_path, "w") as file:
             json.dump(updated_config, file)
     
-    def createNode(self):
-        cur = self.db.cursor()
-
-
-
-        pk = cur.lastrowid
+    def createNode(self, row_data: dict):
+        pk = self.db.insertNode(row_data)
         return Node(pk, self.db)
 
     def getNode():
