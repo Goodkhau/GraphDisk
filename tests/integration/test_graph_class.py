@@ -65,3 +65,25 @@ def test_graph_invalid_config(cleanUp, metadata):
     assert len(node_columns) == 1, "there should only be one column"
     assert node_columns[0]['name'] == "id", "only the default column 'id' should be created"
     assert node_columns[0]['type'] == "INTEGER", "default column type should be 'INTEGER'"
+
+    new_config = readConfig(config_path)
+    assert len(new_config) == 1, "there should only be one config updated"
+    assert new_config.get('id') == "INTEGER", "the new config should have an id column that is default 'INTEGER'"
+
+@pytest.mark.integration
+def test_graph_custom_node_pk(cleanUp, metadata):
+    graphs_folder = cleanUp
+    name = metadata['scenario']
+
+    config_path = graphs_folder / name / "config.json"
+
+    graph = Graph(name=name, node_pk_type="TEXT", graphs_folder=graphs_folder)
+
+    node_columns = graph.db.getTableColumns('node')
+    assert len(node_columns) == 1, "there should only be one column"
+    assert node_columns[0]['name'] == "id", "only the default column 'id' should be created"
+    assert node_columns[0]['type'] == "TEXT", "the column type should be the provided 'TEXT'"
+
+    new_config = readConfig(config_path)
+    assert len(new_config) == 1, "there should only be one config updated"
+    assert new_config.get('id') == "TEXT", "the new config should have an id column that is the provided 'TEXT'"
