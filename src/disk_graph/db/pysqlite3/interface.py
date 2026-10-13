@@ -69,14 +69,20 @@ class pysqlite3_interface(database_interface):
     def insertNode(self, row_data: dict):
         columns = self.getTableColumns('node')
 
-        if row_data.get('id') == None:
-            return None
+        pk = row_data.get('id')
+        is_incrementing_pk = any(column['name'] == 'id' and column['type'] == 'INTEGER' for column in columns)
+        if pk == None and not is_incrementing_pk:
+            raise Exception(
+                f"id needs to be defined for non-incrementing row."
+            )
 
         placeholder, insert_data = self.calculateRowInsertion()
 
-        self.db.execute(f"""
+        cursor = self.db.cursor()
+        cursor.execute(f"""
             INSERT INTO node 
             VALUES {placeholder}
         """, insert_data)
 
-        return row_data.get('id')
+        self.db.commit()
+        return row_data.get('id') if pk != None else cursor.lastrowid
