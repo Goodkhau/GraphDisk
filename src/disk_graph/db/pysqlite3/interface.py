@@ -43,7 +43,10 @@ class pysqlite3_interface(database_interface):
     
     def getTableColumns(self, name):
         self.db.row_factory = dict_factory
-        return self.db.execute(f"SELECT * FROM pragma_table_info('{name}');").fetchall()
+        try:
+            return self.db.execute(f"SELECT * FROM pragma_table_info('{name}');").fetchall()
+        except:
+            return []
 
     def createNodeColumns(self, new_columns: list[dict]):
         successful_creation = []
@@ -57,9 +60,10 @@ class pysqlite3_interface(database_interface):
                     ALTER TABLE node
                     ADD COLUMN {column['name']} {column['type']};
                 """)
-                successful_creation.append(column['name'])
             except:
                 failed_creation.append(column['name'])
+            else:
+                successful_creation.append(column['name'])
 
         return (
             successful_creation,
@@ -79,10 +83,14 @@ class pysqlite3_interface(database_interface):
         placeholder, insert_data = self.calculateRowInsertion(columns, row_data)
 
         cursor = self.db.cursor()
-        cursor.execute(f"""
-            INSERT INTO node 
-            VALUES {placeholder}
-        """, insert_data)
+        try:
+            cursor.execute(f"""
+                INSERT INTO node 
+                VALUES {placeholder}
+            """, insert_data)
+        except:
+            return None
+        else:
+            self.db.commit()
 
-        self.db.commit()
         return row_data.get('id') if pk != None else cursor.lastrowid
