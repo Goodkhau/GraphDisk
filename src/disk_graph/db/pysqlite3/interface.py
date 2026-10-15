@@ -9,11 +9,11 @@ valid_column_types = Literal["INTEGER", "REAL", "TEXT", "BLOB"]
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
 
-def calculateRowInsertion(columns, row_data):
-    insert_data = (row_data.get(column['name'] for column in columns))
+def calculateRowInsertion(columns: list[dict], row_data: dict) -> tuple(str, list):
+    insert_data = [row_data.get(column['name']) for column in columns]
 
     return (
-        "(" + ",".join("?" * len(t)) + ")",
+        "(" + ",".join("?" * len(columns)) + ")",
         insert_data
     )
 
@@ -76,7 +76,7 @@ class pysqlite3_interface(database_interface):
                 f"id needs to be defined for non-incrementing row."
             )
 
-        placeholder, insert_data = self.calculateRowInsertion()
+        placeholder, insert_data = self.calculateRowInsertion(columns, row_data)
 
         cursor = self.db.cursor()
         cursor.execute(f"""
