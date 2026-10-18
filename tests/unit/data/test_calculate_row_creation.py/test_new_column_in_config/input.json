@@ -8,7 +8,7 @@
         "pk": 1
     }],
     "config": {
-        "id": "TEXT",
-        "new_column": "INTEGER"
+        "id": "String",
+        "new_column": "Integer"
     }
 }

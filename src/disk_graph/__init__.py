@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-from src.disk_graph.db.pysqlite3.interface import valid_column_types, pysqlite3_interface as db
+from src.disk_graph.db.pysqlite3.interface import valid_column_types, ColumnType, Sqlite3Interface as db
 from src.disk_graph.Node import Node
 
 default_config = {
@@ -12,6 +12,9 @@ number -> INTEGER
 }
 
 def calculateRowCreation(existing_columns: list[dict], existing_config: dict) -> tuple(list[dict], list[dict]):
+    for column in existing_columns:
+        column['type'] = ColumnType(column['type']).name
+
     present_columns = [{'name': column['name'], 'type': column['type']} for column in existing_columns]
     missing_columns = [{'name': config_name, 'type': config_type} for config_name, config_type in existing_config.items() if not any(
         config_name == column['name'] for column in existing_columns
@@ -23,7 +26,7 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
     )
 
 class Graph:
-    def __init__(self, name, node_pk_type: valid_column_types = "INTEGER", graphs_folder = Path(__file__).parent.parent):
+    def __init__(self, name, node_pk_type: valid_column_types = ColumnType.Integer.name, graphs_folder = Path(__file__).parent.parent):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
@@ -51,9 +54,11 @@ class Graph:
         success_cols, failed_cols = self.db.createNodeColumns(new_columns)
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
+        
+        print("Updated Conf: ",updated_config)
 
         with open(self.config_path, "w") as file:
-            json.dump(updated_config, file)
+            json.dump(default_config | updated_config, file)
     
     def createNode(self, row_data: dict):
         pk = self.db.insertNode(row_data)

@@ -1,23 +1,17 @@
-class database_interface:
-    def __init__(self, name=''):
-        raise NotImplementedError(
-            self.notCreatedMessage(self._testMethodName)
-        )
-    
-    def notCreatedMessage(function_name):
-        return f"{type(self).__name__}: {function_name} was not implemented."
-    
-    def createTables():
-        raise NotImplementedError(
-            self.notCreatedMessage(self._testMethodName)
-        )
-    
-    def getTableColumns(name):
-        raise NotImplementedError(
-            self.notCreatedMessage(self._testMethodName)
-        )
+from abc import ABC, abstractmethod
 
-    def createNodeColumns(new_columns: list[dict]):
-        raise NotImplementedError(
-            self.notCreatedMessage(self._testMethodName)
-        )
+class database_interface(ABC):
+    def __init__(self, name: str = ''):
+        pass
+
+    @abstractmethod
+    def createTables(self):
+        pass
+
+    @abstractmethod
+    def getTableColumns(self, name: str):
+        pass
+
+    @abstractmethod
+    def createNodeColumns(self, new_columns: list[dict]):
+        pass

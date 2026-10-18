@@ -8,6 +8,6 @@
         "pk": 1
     }],
     "config": {
-        "same_name": "TEXT"
+        "same_name": "String"
     }
 }

@@ -1,6 +1,6 @@
 {
     "new_columns": [],
     "updated_config": {
-        "same_name": "TEXT"
+        "same_name": "String"
     }
 }
