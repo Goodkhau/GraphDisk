@@ -1,8 +1,12 @@
-from pathlib import Path
 import json
+import logging
+from pathlib import Path
 
 from src.disk_graph.db.pysqlite3.interface import valid_column_types, ColumnType, Sqlite3Interface as db
 from src.disk_graph.Node import Node
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 default_config = {
     "message": """Create the columns you need here in JSON where the field will be the name and the value will be the type of the column. An "id" field is required
@@ -33,8 +37,13 @@ class Graph:
         self.graph_path.mkdir(parents=True, exist_ok=True)
         self.db = db(name, graphs_folder=graphs_folder)
 
-        self.db.createTables(node_pk_type=node_pk_type)
-        self.updateTables()
+        try:
+            self.db.createTables(node_pk_type=node_pk_type)
+        except Exception as Error:
+            logger.critical("Failed to create required tables", Error)
+            raise Exception("Failed essential graph creation dependency") from Error
+        else:
+            self.updateTables()
     
     def updateTables(self):
         existing_columns = self.db.getTableColumns('node')
