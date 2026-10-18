@@ -1,1 +1,4 @@
-{}
+{
+    "placeholder": "(?,?,?,?)",
+    "insert_data": [null, null, null, null]
+}

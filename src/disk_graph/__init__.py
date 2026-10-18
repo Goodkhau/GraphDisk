@@ -54,8 +54,6 @@ class Graph:
         success_cols, failed_cols = self.db.createNodeColumns(new_columns)
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
-        
-        print("Updated Conf: ",updated_config)
 
         with open(self.config_path, "w") as file:
             json.dump(default_config | updated_config, file)

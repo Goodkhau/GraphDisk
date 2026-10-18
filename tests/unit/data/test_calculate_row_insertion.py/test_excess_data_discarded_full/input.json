@@ -1,1 +1,40 @@
-{}
+{
+    "columns": [{
+        "cid": 1,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+    }, {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+    }, {
+        "cid": 3,
+        "name": "img",
+        "type": "BLOB",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+    }, {
+        "cid": 4,
+        "name": "scale",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+    }],
+    "row_data": {
+        "id": 1,
+        "name": "first",
+        "img": null,
+        "scale": 1.0,
+        "excess_1": "funny",
+        "excess_2": 3.14,
+        "excess_3": null
+    }
+}
