@@ -34,13 +34,13 @@ class ColumnType(str, Enum):
         return super()._missing_(value)
 
 class Sqlite3Interface(database_interface):
-    def __init__(self, name, graphs_folder):
+    def __init__(self, name: str, graphs_folder: str):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
 
         self.db = db.connect(self.database_file)
 
-    def createTables(self, node_pk_type = ColumnType.Integer.name):
+    def createTables(self, node_pk_type: str = ColumnType.Integer.name):
         self.db.executescript(f"""
             PRAGMA foreign_keys = ON;
             CREATE TABLE IF NOT EXISTS node (
@@ -57,7 +57,7 @@ class Sqlite3Interface(database_interface):
             );
         """)
     
-    def getTableColumns(self, name):
+    def getTableColumns(self, name: str):
         self.db.row_factory = dict_factory
         try:
             return self.db.execute(f"SELECT * FROM pragma_table_info('{name}');").fetchall()
@@ -113,7 +113,8 @@ class Sqlite3Interface(database_interface):
                 INSERT INTO node 
                 VALUES {placeholder}
             """, insert_data)
-        except:
+        except Exception as Error:
+            print("pysqlite3/interface.py: Failed to insert node.", Error)
             return None
         else:
             self.db.commit()

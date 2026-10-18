@@ -26,7 +26,7 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
     )
 
 class Graph:
-    def __init__(self, name, node_pk_type: valid_column_types = ColumnType.Integer.name, graphs_folder = Path(__file__).parent.parent):
+    def __init__(self, name: str, node_pk_type: valid_column_types = ColumnType.Integer.name, graphs_folder: Path = Path(__file__).parent.parent):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
