@@ -4,21 +4,8 @@ import json
 from src.disk_graph import Graph, default_config
 from src.disk_graph.db.pysqlite3.interface import ColumnType
 
-def updateConfig(path, config):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.touch()
-    with open(path, "w") as file:
-        json.dump(config, file)
-
-def readConfig(path):
-    try:
-        with open(path, 'r', encoding="utf-8") as file:
-            return json.load(file)
-    except:
-        return None
-
 @pytest.mark.integration
-def test_graph_creation(cleanUp, metadata):
+def test_graph_creation(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -30,7 +17,7 @@ def test_graph_creation(cleanUp, metadata):
     }
 
     config_path = graphs_folder / name / "config.json"
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
@@ -42,13 +29,13 @@ def test_graph_creation(cleanUp, metadata):
         assert conf_type != None, "column should be derived from config"
         assert conf_type == ColumnType(column['type']).name, "column should match config"
     
-    new_config = readConfig(config_path)
+    new_config = Config.read(config_path)
     assert new_config != None, "new config should exist"
     assert new_config.get('message') != None, "message should be attached to new config file"
     assert new_config == default_config | configs, "new config should match original config"
 
 @pytest.mark.integration
-def test_graph_invalid_config(cleanUp, metadata):
+def test_graph_invalid_config(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -59,7 +46,7 @@ def test_graph_invalid_config(cleanUp, metadata):
     }
 
     config_path = graphs_folder / name / "config.json"
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
@@ -68,12 +55,12 @@ def test_graph_invalid_config(cleanUp, metadata):
     assert node_columns[0]['name'] == "id", "only the default column 'id' should be created"
     assert node_columns[0]['type'] == "INTEGER", "default column type should be 'INTEGER'"
 
-    new_config = readConfig(config_path)
+    new_config = Config.read(config_path)
     assert len(new_config) == 2, "there should only be one config updated with the default message"
     assert new_config.get('id') == ColumnType.Integer.name, f"the new config should have an id column that is default {ColumnType.Integer.name}"
 
 @pytest.mark.integration
-def test_graph_custom_node_pk(cleanUp, metadata):
+def test_graph_custom_node_pk(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -86,12 +73,12 @@ def test_graph_custom_node_pk(cleanUp, metadata):
     assert node_columns[0]['name'] == "id", "only the default column 'id' should be created"
     assert node_columns[0]['type'] == ColumnType.String.value, f"the column type should be the provided {ColumnType.String.value}"
 
-    new_config = readConfig(config_path)
+    new_config = Config.read(config_path)
     assert len(new_config) == 2, "there should only be one config updated with the default message"
     assert new_config.get('id') == ColumnType.String.name, f"the new config should have an id column that is the provided {ColumnType.String.name}"
 
 @pytest.mark.integration
-def test_graph_mixed_config(cleanUp, metadata):
+def test_graph_mixed_config(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -103,7 +90,7 @@ def test_graph_mixed_config(cleanUp, metadata):
     }
 
     config_path = graphs_folder / name / "config.json"
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
@@ -115,19 +102,19 @@ def test_graph_mixed_config(cleanUp, metadata):
         "new_row": ColumnType.Integer.name
     }
 
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
     graph.updateTables()
 
     node_columns = graph.db.getTableColumns('node')
     assert len(node_columns) == len(configs), "the number of columns should match the provided config"
 
-    new_config = readConfig(config_path)
+    new_config = Config.read(config_path)
     assert new_config != None, "new config should exist"
     assert new_config == configs | default_config, "new config should match updated config with a message attached"
 
 
 @pytest.mark.integration
-def test_graph_retyping_unallowed(cleanUp, metadata):
+def test_graph_retyping_unallowed(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -139,7 +126,7 @@ def test_graph_retyping_unallowed(cleanUp, metadata):
     }
 
     config_path = graphs_folder / name / "config.json"
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
@@ -150,7 +137,7 @@ def test_graph_retyping_unallowed(cleanUp, metadata):
         "test_col_3": ColumnType.Float.name
     }
 
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
     graph.updateTables()
 
     node_columns = graph.db.getTableColumns('node')
@@ -160,12 +147,12 @@ def test_graph_retyping_unallowed(cleanUp, metadata):
         assert conf_type != None, "column should be derived from config"
         assert conf_type == ColumnType(column['type']).name, "column should match config"
 
-    new_config = readConfig(config_path)
+    new_config = Config.read(config_path)
     assert new_config != None, "new config should exist"
     assert new_config == configs | default_config, "new config should match updated config with a message attached"
 
 @pytest.mark.integration
-def test_graph_config_reinstated(cleanUp, metadata):
+def test_graph_config_reinstated(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -177,11 +164,11 @@ def test_graph_config_reinstated(cleanUp, metadata):
     }
 
     config_path = graphs_folder / name / "config.json"
-    updateConfig(config_path, configs)
+    Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
-    updateConfig(config_path, {})
+    Config.update(config_path, {})
     graph.updateTables()
 
     node_columns = graph.db.getTableColumns('node')
@@ -191,6 +178,6 @@ def test_graph_config_reinstated(cleanUp, metadata):
         assert conf_type != None, "column should be derived from config"
         assert conf_type == ColumnType(column['type']).name, "column should match config"
 
-    new_config = readConfig(config_path)
+    new_config = Config.read(config_path)
     assert new_config != None, "new config should be created"
     assert new_config == configs | default_config, "new config should match original config with a message attached"
