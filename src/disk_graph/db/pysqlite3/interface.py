@@ -138,3 +138,32 @@ class Sqlite3Interface(database_interface):
             return pk if pk != None else cursor.lastrowid
         finally:
             conn.close()
+    
+    def paginateAllNodes(self, page_size, use_dict_fact):
+        MAX_PAGE_SIZE = 10000
+        MIN_PAGE_SIZE = 100
+        page_size = min(MAX_PAGE_SIZE, page_size)
+        page_size = max(MIN_PAGE_SIZE, page_size)
+
+        rows = True
+        last = False
+        while rows:
+            try:
+                conn = sqlite3.connect(self.database_file)
+                if use_dict_fact:
+                    conn.row_factory = dict_factory
+
+                rows = conn.execute(
+                    "SELECT * FROM node WHERE id > ? ORDER BY id LIMIT ?" if last else "select * FROM node ORDER BY id LIMIT ?",
+                    (last, page_size) if last else (page_size)
+                )
+            except:
+                logger.exception(f"Failed to get row for page size {page_size} and last {last}")
+                raise StopIteration
+            else:
+                yield rows
+                last = rows[0].get('id') if use_dict_fact else rows[-1][0]
+            finally:
+                conn.close()
+
+        raise StopIteration

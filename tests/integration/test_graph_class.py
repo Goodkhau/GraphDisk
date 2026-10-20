@@ -8,6 +8,7 @@ from src.disk_graph.db.pysqlite3.interface import ColumnType
 def test_graph_creation(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
+    config_path = graphs_folder / name / "config.json"
 
     configs = {
         "id": ColumnType.Integer.name,
@@ -16,7 +17,6 @@ def test_graph_creation(cleanUp, metadata, Config):
         "test_col_3": ColumnType.Bytes.name
     }
 
-    config_path = graphs_folder / name / "config.json"
     Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
@@ -38,6 +38,7 @@ def test_graph_creation(cleanUp, metadata, Config):
 def test_graph_invalid_config(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
+    config_path = graphs_folder / name / "config.json"
 
     configs = {
         "test_col_1": "BAD_TYPE",
@@ -45,7 +46,6 @@ def test_graph_invalid_config(cleanUp, metadata, Config):
         "test_col_3": "BAD_TYPE"
     }
 
-    config_path = graphs_folder / name / "config.json"
     Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
@@ -63,7 +63,6 @@ def test_graph_invalid_config(cleanUp, metadata, Config):
 def test_graph_custom_node_pk(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
-
     config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name=name, node_pk_type=ColumnType.String.name, graphs_folder=graphs_folder)
@@ -81,6 +80,7 @@ def test_graph_custom_node_pk(cleanUp, metadata, Config):
 def test_graph_mixed_config(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
+    config_path = graphs_folder / name / "config.json"
 
     configs = {
         "id": ColumnType.Integer.name,
@@ -89,7 +89,6 @@ def test_graph_mixed_config(cleanUp, metadata, Config):
         "test_col_3": ColumnType.Bytes.name
     }
 
-    config_path = graphs_folder / name / "config.json"
     Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
@@ -117,6 +116,7 @@ def test_graph_mixed_config(cleanUp, metadata, Config):
 def test_graph_retyping_unallowed(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
+    config_path = graphs_folder / name / "config.json"
 
     configs = {
         "id": ColumnType.Integer.name,
@@ -125,7 +125,6 @@ def test_graph_retyping_unallowed(cleanUp, metadata, Config):
         "test_col_3": ColumnType.Bytes.name
     }
 
-    config_path = graphs_folder / name / "config.json"
     Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
@@ -155,6 +154,7 @@ def test_graph_retyping_unallowed(cleanUp, metadata, Config):
 def test_graph_config_reinstated(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
+    config_path = graphs_folder / name / "config.json"
 
     configs = {
         "id": ColumnType.Integer.name,
@@ -163,7 +163,6 @@ def test_graph_config_reinstated(cleanUp, metadata, Config):
         "test_col_3": ColumnType.Bytes.name,
     }
 
-    config_path = graphs_folder / name / "config.json"
     Config.update(config_path, configs)
 
     graph = Graph(name=name, graphs_folder=graphs_folder)

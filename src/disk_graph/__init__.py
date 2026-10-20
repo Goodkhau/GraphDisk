@@ -71,7 +71,7 @@ class Graph:
         pk = self.db.insertNode(row_data)
         return Node(pk, self.db)
 
-    def getNode():
+    def getNode(self, pk):
         cur = self.db.cursor()
         cur.execute("""
             SELECT *
@@ -79,3 +79,6 @@ class Graph:
 
         """)
         return Node()
+    
+    def getAllNodes(self, page_size = 1000, use_dict_fact = True):
+        return self.db.paginateAllNodes(page_size, use_dict_fact)
