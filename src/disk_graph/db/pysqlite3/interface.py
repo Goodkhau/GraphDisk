@@ -117,7 +117,7 @@ class Sqlite3Interface(database_interface):
                 f"id needs to be defined for non-incrementing row."
             )
 
-        placeholder, insert_data = self.calculateRowInsertion(columns, row_data)
+        placeholder, insert_data = calculateRowInsertion(columns, row_data)
 
         try:
             conn = sqlite3.connect(self.database_file)

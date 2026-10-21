@@ -1,5 +1,5 @@
 class Node:
-    def __init__(pk, db):
+    def __init__(self, pk, db):
         self.pk = pk
         self.db = db
     

@@ -13,8 +13,8 @@ def test_auto_incrementing(cleanUp, metadata, Config):
         "cust_field": ColumnType.String.name
     }
 
-    Config.update(configs)
-    graph = Graph()
+    Config.update(config_path, configs)
+    graph = Graph(name, graphs_folder=graphs_folder)
 
     graph.createNode()
     graph.createNode()

@@ -67,7 +67,7 @@ class Graph:
         with open(self.config_path, "w") as file:
             json.dump(default_config | updated_config, file)
     
-    def createNode(self, row_data: dict):
+    def createNode(self, row_data: dict = {}):
         pk = self.db.insertNode(row_data)
         return Node(pk, self.db)
 
