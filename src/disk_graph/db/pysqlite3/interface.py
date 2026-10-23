@@ -147,7 +147,7 @@ class Sqlite3Interface(database_interface):
 
         rows = True
         last = False
-        while rows:
+        while True:
             try:
                 conn = sqlite3.connect(self.database_file)
                 if use_dict_fact:
@@ -155,15 +155,16 @@ class Sqlite3Interface(database_interface):
 
                 rows = conn.execute(
                     "SELECT * FROM node WHERE id > ? ORDER BY id LIMIT ?" if last else "select * FROM node ORDER BY id LIMIT ?",
-                    (last, page_size) if last else (page_size)
-                )
+                    (last, page_size) if last else (page_size,)
+                ).fetchall()
             except:
                 logger.exception(f"Failed to get row for page size {page_size} and last {last}")
-                raise StopIteration
+                return []
             else:
+                if not rows:
+                    return []
+
                 yield rows
-                last = rows[0].get('id') if use_dict_fact else rows[-1][0]
+                last = rows[-1].get('id') if use_dict_fact else rows[-1][0]
             finally:
                 conn.close()
-
-        raise StopIteration
