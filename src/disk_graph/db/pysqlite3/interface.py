@@ -129,13 +129,23 @@ class Sqlite3Interface(database_interface):
                 """,
                 insert_data
             )
-        except Exception:
+        except sqlite3.Error as Error:
             conn.rollback()
-            logger.exception("Failed to insert node.")
-            return None
+            raise sqlite3.Error(f"Sqlite3Interface: Failed to insert column {row_data} into table 'node' {Error}")
+        except Exception as Error:
+            conn.rollback()
+            raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
         else:
             conn.commit()
-            return pk if pk != None else cursor.lastrowid
+            pk = pk if pk != None else cursor.lastrowid
+
+            match next(column["type"] for column in columns):
+                case ColumnType.Integer.value:
+                    pk = int(pk)
+                case ColumnType.String.value:
+                    pk = str(pk)
+            
+            return pk
         finally:
             conn.close()
     

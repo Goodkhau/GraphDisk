@@ -1,6 +1,6 @@
 class Node:
-    def __init__(self, pk, db):
-        self.pk = pk
+    def __init__(self, id, db):
+        self.id = id
         self.db = db
     
     def value():
