@@ -139,6 +139,8 @@ class Sqlite3Interface(database_interface):
             conn.commit()
             pk = pk if pk != None else cursor.lastrowid
 
+            print("type of column:", next(column["type"] for column in columns))
+
             match next(column["type"] for column in columns):
                 case ColumnType.Integer.value:
                     pk = int(pk)
