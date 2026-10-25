@@ -153,10 +153,12 @@ def test_string_invalid_pk(cleanUp, metadata, Config):
     assert "Sqlite3Interface: Failed to insert column" in str(invalid_error.value), "exception should have message attached"
 
     node = graph.createNode({ "id": valid_pk })
+    assert isinstance(node.id, str), "string number should convert to string"
     assert node.id == str(valid_pk), "string number should convert to string"
 
     rows = list(next(graph.getAllNodes()))
     assert len(rows) == 1, "there should be one row created"
+    assert isinstance(rows[0].get("id"), str), "string number should convert to string"
     assert rows[0].get("id") == str(valid_pk), "node should be populated"
 
 @pytest.mark.integration
