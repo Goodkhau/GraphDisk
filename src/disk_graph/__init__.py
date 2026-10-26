@@ -40,7 +40,7 @@ class Graph:
         try:
             self.db.createTables(node_pk_type=node_pk_type)
         except Exception as Error:
-            logger.critical("Failed to create required tables", Error)
+            logger.critical("Failed to create required tables")
             raise Exception("Failed essential graph creation dependency") from Error
         else:
             self.updateTables()
@@ -72,13 +72,8 @@ class Graph:
         return Node(pk, self.db)
 
     def getNode(self, pk):
-        cur = self.db.cursor()
-        cur.execute("""
-            SELECT *
-            FROM vertices
-
-        """)
-        return Node()
+        row = self.db.getNode(pk)
+        return None if row == None else Node(row.get("id"))
     
     def getAllNodes(self, page_size = 1000, use_dict_fact = True):
         return self.db.paginateAllNodes(page_size, use_dict_fact)

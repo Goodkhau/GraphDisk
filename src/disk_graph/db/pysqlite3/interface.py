@@ -52,10 +52,13 @@ class Sqlite3Interface(database_interface):
                     id      {ColumnType[node_pk_type].value} PRIMARY KEY
                 ) STRICT;
                 CREATE TABLE IF NOT EXISTS node_ptr (
-                    id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                    node    {ColumnType[node_pk_type].value} NOT NULL REFERENCES node(id) ON DELETE CASCADE
+                    id  {ColumnType[node_pk_type].value} PRIMARY KEY
+                        REFERENCES node(id) ON DELETE CASCADE,
+                    in_degree           INTEGER NOT NULL DEFAULT 0,
+                    out_degree          INTEGER NOT NULL DEFAULT 0,
+                    looped              INTEGER NOT NULL DEFAULT 0
                 );
-                CREATE TABLE IF NOT EXISTS verticies (
+                CREATE TABLE IF NOT EXISTS edges (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     from_node   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
                     to_node     INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
@@ -106,6 +109,20 @@ class Sqlite3Interface(database_interface):
             successful_creation,
             failed_creation
         )
+    
+    def getNode(self, pk):
+        try:
+            conn = sqlite3.connect(self.database_file)
+            return conn.execute(
+                f"""
+                    SELECT *
+                    FROM node_ptr
+                    WHERE id = ?
+                """,
+                [pk]
+            ).fetchone()
+        finally:
+            conn.close()
 
     def insertNode(self, row_data: dict):
         columns = self.getTableColumns('node')
@@ -129,6 +146,13 @@ class Sqlite3Interface(database_interface):
                 """,
                 insert_data
             )
+            cursor.execute(
+                f"""
+                    INSERT INTO node_ptr (id)
+                    VALUES (?)
+                """,
+                [pk]
+            )
         except sqlite3.Error as Error:
             conn.rollback()
             raise sqlite3.Error(f"Sqlite3Interface: Failed to insert column {row_data} into table 'node' {Error}")
@@ -138,8 +162,6 @@ class Sqlite3Interface(database_interface):
         else:
             conn.commit()
             pk = pk if pk != None else cursor.lastrowid
-
-            print("type of column:", next(column["type"] for column in columns))
 
             match next(column["type"] for column in columns):
                 case ColumnType.Integer.value:

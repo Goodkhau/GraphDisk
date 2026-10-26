@@ -4,10 +4,16 @@ class Node:
         self.db = db
     
     def value():
-        return
+        return self.db
 
     def add():
-        return self
+        pass
     
     def next():
-        return self
+        pass
+
+    def childrens():
+        pass
+
+    def parents():
+        pass
