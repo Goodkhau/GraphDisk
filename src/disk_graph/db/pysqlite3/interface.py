@@ -62,9 +62,9 @@ class Sqlite3Interface(database_interface):
                 CREATE INDEX IF NOT EXISTS idx_node_ptr_node ON node_ptr(node);
 
                 CREATE TABLE IF NOT EXISTS edges (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    from_node   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    to_node     INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    from_node_ptr   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    to_node_ptr     INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
                 );
                 CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node);
                 CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node);
@@ -177,6 +177,33 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
+    def addConnection(self, from_ptr, to_ptr, throw_on_duplicate):
+        try:
+            conn = sqlite3.connect(self.database_file)
+            cursor = conn.cursor()
+
+            existing = cusor.execute(
+                f"""
+                    SELECT id
+                    FROM edges
+                    WHERE from_node_ptr = from_ptr
+                    AND to_node_ptr = to_ptr
+                """
+            ).fetchone()
+
+            if existing:
+                return
+
+            cusor.execute(
+                f"""
+                    INSERT INTO edges
+                    VALUES (?,?)
+                """,
+                (from_ptr, to_ptr,)
+            )
+        except Exception as Error:
+            raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
+
     def paginateAllNodes(self, page_size, use_dict_fact):
         MAX_PAGE_SIZE = 10000
         MIN_PAGE_SIZE = 100

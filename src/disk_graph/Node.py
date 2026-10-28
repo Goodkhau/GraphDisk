@@ -6,13 +6,17 @@ class Node:
     def value(self, use_dict_fact = True):
         return self.db.getNode(self.node_ptr, use_dict_fact);
 
-    def add():
-        pass
+    def add(self, to_node_ptr: any | Node, strict = False):
+        if (isinstance(to_node_ptr, Node)):
+            to_node_ptr = to_node_ptr.node_ptr
+        
+        self.db.addConnection(from_ptr=self.node_ptr, to_ptr=to_node_ptr, throw_on_duplicate=strict)
+        return self
     
     def next():
         pass
 
-    def childrens():
+    def children():
         pass
 
     def parents():
