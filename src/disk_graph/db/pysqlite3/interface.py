@@ -49,20 +49,25 @@ class Sqlite3Interface(database_interface):
             conn.executescript(f"""
                 PRAGMA foreign_keys = ON;
                 CREATE TABLE IF NOT EXISTS node (
-                    id      {ColumnType[node_pk_type].value} PRIMARY KEY
+                    id          {ColumnType[node_pk_type].value} PRIMARY KEY
                 ) STRICT;
+
                 CREATE TABLE IF NOT EXISTS node_ptr (
-                    id  {ColumnType[node_pk_type].value} PRIMARY KEY
-                        REFERENCES node(id) ON DELETE CASCADE,
-                    in_degree           INTEGER NOT NULL DEFAULT 0,
-                    out_degree          INTEGER NOT NULL DEFAULT 0,
-                    looped              INTEGER NOT NULL DEFAULT 0
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    node        INTEGER NOT NULL REFERENCES node(id),
+                    in_degree   INTEGER NOT NULL DEFAULT 0,
+                    out_degree  INTEGER NOT NULL DEFAULT 0,
+                    looped      INTEGER NOT NULL DEFAULT 0
                 );
+                CREATE INDEX IF NOT EXISTS idx_node_ptr_node ON node_ptr(node);
+
                 CREATE TABLE IF NOT EXISTS edges (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     from_node   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
                     to_node     INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
                 );
+                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node);
+                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node);
             """)
         finally:
             conn.close()
@@ -119,7 +124,7 @@ class Sqlite3Interface(database_interface):
                     FROM node_ptr
                     WHERE id = ?
                 """,
-                [pk]
+                (pk,)
             ).fetchone()
         finally:
             conn.close()
@@ -139,6 +144,7 @@ class Sqlite3Interface(database_interface):
         try:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
+
             cursor.execute(
                 f"""
                     INSERT INTO node 
@@ -146,22 +152,23 @@ class Sqlite3Interface(database_interface):
                 """,
                 insert_data
             )
+
+            pk = pk if pk != None else cursor.lastrowid
             cursor.execute(
                 f"""
-                    INSERT INTO node_ptr (id)
+                    INSERT INTO node_ptr (node)
                     VALUES (?)
                 """,
-                [pk]
+                (pk,)
             )
         except sqlite3.Error as Error:
             conn.rollback()
-            raise sqlite3.Error(f"Sqlite3Interface: Failed to insert column {row_data} into table 'node' {Error}")
+            raise sqlite3.Error(f"Sqlite3Interface: Failed to insert column {row_data} and primary key {pk} {Error}")
         except Exception as Error:
             conn.rollback()
             raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
         else:
             conn.commit()
-            pk = pk if pk != None else cursor.lastrowid
 
             match next(column["type"] for column in columns):
                 case ColumnType.Integer.value:
