@@ -68,12 +68,12 @@ class Graph:
             json.dump(default_config | updated_config, file)
     
     def createNode(self, row_data: dict = {}):
-        pk = self.db.insertNode(row_data)
-        return Node(pk, self.db)
+        node_ptr = self.db.insertNode(row_data)
+        return Node(node_ptr, self.db)
 
     def getNode(self, pk):
         row = self.db.getNode(pk)
-        return None if row == None else Node(row.get("id"))
+        return None if row == None else Node(row.get("id"), self.db)
     
-    def getAllNodes(self, page_size = 1000, use_dict_fact = True):
+    def getAllNodesByPage(self, page_size = 1000, use_dict_fact = True):
         return self.db.paginateAllNodes(page_size, use_dict_fact)

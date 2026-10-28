@@ -115,16 +115,20 @@ class Sqlite3Interface(database_interface):
             failed_creation
         )
     
-    def getNode(self, pk):
+    def getNode(self, node_ptr, use_dict_fact):
         try:
             conn = sqlite3.connect(self.database_file)
+            if use_dict_fact:
+                conn.row_factory = dict_factory
             return conn.execute(
                 f"""
-                    SELECT *
-                    FROM node_ptr
-                    WHERE id = ?
+                    SELECT node.*
+                    FROM node_ptr AS ptr
+                    LEFT JOIN node AS node
+                        ON ptr.node = node.id
+                    WHERE ptr.id = ?
                 """,
-                (pk,)
+                (node_ptr,)
             ).fetchone()
         finally:
             conn.close()
@@ -169,14 +173,7 @@ class Sqlite3Interface(database_interface):
             raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
         else:
             conn.commit()
-
-            match next(column["type"] for column in columns):
-                case ColumnType.Integer.value:
-                    pk = int(pk)
-                case ColumnType.String.value:
-                    pk = str(pk)
-            
-            return pk
+            return cursor.lastrowid
         finally:
             conn.close()
     
