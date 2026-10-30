@@ -98,7 +98,7 @@ def test_integer_duplicate_pk(cleanUp, metadata, Config):
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
 
-    graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String.name)
+    graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String)
 
     duplicate_pk = "dupilcate"
 
@@ -115,7 +115,7 @@ def test_string_empty_pk(cleanUp, metadata, Config):
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
 
-    graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String.name)
+    graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String)
 
     empty_string = ""
     white_space = " \n\t"
@@ -141,7 +141,7 @@ def test_string_invalid_pk(cleanUp, metadata, Config):
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
 
-    graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String.name)
+    graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String)
 
     invalid_pk = bytes([random.randint(0, 255) for _ in range(6)])
     valid_pk = 23

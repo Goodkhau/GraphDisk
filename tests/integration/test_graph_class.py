@@ -65,7 +65,7 @@ def test_graph_custom_node_pk(cleanUp, metadata, Config):
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
 
-    graph = Graph(name=name, node_pk_type=ColumnType.String.name, graphs_folder=graphs_folder)
+    graph = Graph(name=name, node_pk_type=ColumnType.String, graphs_folder=graphs_folder)
 
     node_columns = graph.db.getTableColumns('node')
     assert len(node_columns) == 1, "there should only be one column"

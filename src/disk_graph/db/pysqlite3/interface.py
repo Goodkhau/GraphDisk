@@ -38,26 +38,36 @@ class ColumnType(str, Enum):
                     return member
         return super()._missing_(value)
 
+class EdgesColumns(str, Enum):
+    ID      = "id"
+    From    = "from_node_ptr"
+    To      = "to_node_ptr"
+
+class NodePtrColumns(str, Enum):
+    ID          = "id"
+    Node        = "node"
+    InDegree    = "in_degree"
+    OutDegree   = "out_degree"
+
 class Sqlite3Interface(database_interface):
     def __init__(self, name: str, graphs_folder: str):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
 
-    def createTables(self, node_pk_type: str = ColumnType.Integer.name):
+    def createTables(self, node_pk_type: ColumnType = ColumnType.Integer):
         try:
             conn = sqlite3.connect(self.database_file)
             conn.executescript(f"""
                 PRAGMA foreign_keys = ON;
                 CREATE TABLE IF NOT EXISTS node (
-                    id          {ColumnType[node_pk_type].value} PRIMARY KEY
+                    id          {ColumnType[node_pk_type.name].value} PRIMARY KEY
                 ) STRICT;
 
                 CREATE TABLE IF NOT EXISTS node_ptr (
                     id          INTEGER PRIMARY KEY AUTOINCREMENT,
                     node        INTEGER NOT NULL REFERENCES node(id),
                     in_degree   INTEGER NOT NULL DEFAULT 0,
-                    out_degree  INTEGER NOT NULL DEFAULT 0,
-                    looped      INTEGER NOT NULL DEFAULT 0
+                    out_degree  INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS idx_node_ptr_node ON node_ptr(node);
 
@@ -66,8 +76,8 @@ class Sqlite3Interface(database_interface):
                     from_node_ptr   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
                     to_node_ptr     INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
                 );
-                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node);
-                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node);
+                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node_ptr);
+                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node_ptr);
             """)
         finally:
             conn.close()
@@ -203,6 +213,24 @@ class Sqlite3Interface(database_interface):
             )
         except Exception as Error:
             raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
+    
+    def getAllChildren(self, node_ptr, use_dict_fact = True) -> dict[EdgesColumns.To.value, int]:
+        try:
+            conn = sqlite3.connect(self.database_file)
+            if use_dict_fact:
+                conn.row_factory = dict_factory
+            return conn.execute(
+                f"""
+                    SELECT edge.to_node_ptr
+                    FROM node_ptr AS ptr
+                    INNER JOIN edges as edge
+                        ON edge.from_node_ptr = ptr.id
+                    WHERE id = (?)
+                """,
+                (node_ptr,)
+            ).fetchall()
+        finally:
+            conn.close()
 
     def paginateAllNodes(self, page_size, use_dict_fact):
         MAX_PAGE_SIZE = 10000
