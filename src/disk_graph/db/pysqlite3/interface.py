@@ -157,6 +157,20 @@ class Sqlite3Interface(database_interface):
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
 
+            existing_node_ptr = cursor.execute(
+                f"""
+                    SELECT ptr.id
+                    FROM node_ptr AS ptr
+                    INNER JOIN node AS node
+                        ON ptr.{NodePtr.Node.name} = node.id
+                    WHERE node.id = (?)
+                """,
+                (pk,)
+            ).fetchone()
+
+            if existing_node_ptr:
+                return existing_node_ptr[0]
+
             cursor.execute(
                 f"""
                     INSERT INTO node 

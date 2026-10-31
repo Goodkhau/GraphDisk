@@ -102,12 +102,11 @@ def test_integer_duplicate_pk(cleanUp, metadata, Config):
 
     duplicate_pk = "dupilcate"
 
-    graph.createNode({ "id": duplicate_pk })
-    with pytest.raises(sqlite3.Error) as invalid_error:
-        graph.createNode({ "id": duplicate_pk })
+    node = graph.createNode({ "id": duplicate_pk })
+    assert node == graph.createNode({ "id": duplicate_pk }), "duplicate pk should return node equal to existing node"
     
-    assert invalid_error.type is sqlite3.Error
-    assert "Sqlite3Interface: Failed to insert column" in str(invalid_error.value), "exception should have message attached"
+    rows = list(next(graph.getAllNodesByPage()))
+    assert len(rows) == 1, "only one node should exist"
 
 @pytest.mark.integration
 def test_string_empty_pk(cleanUp, metadata, Config):
@@ -160,10 +159,6 @@ def test_string_invalid_pk(cleanUp, metadata, Config):
     assert len(rows) == 1, "there should be one row created"
     assert isinstance(rows[0].get("id"), str), "string number should convert to string"
     assert rows[0].get("id") == str(valid_pk), "node should be populated"
-
-@pytest.mark.integration
-def test_byte_duplicate_pk(cleanUp, metadata, Config):
-    pass
 
 @pytest.mark.integration
 def test_byte_invalid_pk(cleanUp, metadata, Config):

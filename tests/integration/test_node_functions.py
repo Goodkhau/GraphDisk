@@ -70,3 +70,24 @@ def test_nested_children(cleanUp, metadata):
             parents_of_grand = grand_child.parents()
             assert len(parents_of_grand) == 1, "grand childs should have one parent"
             assert child == grand_child.parents()[0], "child and parent of grand child should match"
+
+def test_duplicate_connection(cleanUp, metadata):
+    graphs_folder = cleanUp
+    name = metadata['scenario']
+    config_path = graphs_folder / name / "config.json"
+
+    graph = Graph(name=name, graphs_folder=graphs_folder)
+
+    node_one = graph.createNode()
+    node_two = graph.createNode()
+
+    node_one.add(node_two).add(node_two)
+    node_one.add(node_two)
+
+    children = node_one.children()
+    assert len(children) == 1, "node one should only have one child"
+    assert node_two == children[0], "the child should be node two"
+
+    parents = node_two.parents()
+    assert len(parents) == 1, "node tow should only have one parent"
+    assert node_one == parents[0], "the parent should be node one"
