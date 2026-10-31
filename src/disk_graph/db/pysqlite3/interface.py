@@ -38,13 +38,11 @@ class ColumnType(str, Enum):
                     return member
         return super()._missing_(value)
 
-class EdgesColumns(str, Enum):
-    ID      = "id"
+class Edges(str, Enum):
     From    = "from_node_ptr"
     To      = "to_node_ptr"
 
-class NodePtrColumns(str, Enum):
-    ID          = "id"
+class NodePtr(str, Enum):
     Node        = "node"
     InDegree    = "in_degree"
     OutDegree   = "out_degree"
@@ -60,21 +58,21 @@ class Sqlite3Interface(database_interface):
             conn.executescript(f"""
                 PRAGMA foreign_keys = ON;
                 CREATE TABLE IF NOT EXISTS node (
-                    id          {ColumnType[node_pk_type.name].value} PRIMARY KEY
+                    id {ColumnType[node_pk_type.name].value} PRIMARY KEY
                 ) STRICT;
 
                 CREATE TABLE IF NOT EXISTS node_ptr (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    node        INTEGER NOT NULL REFERENCES node(id),
-                    in_degree   INTEGER NOT NULL DEFAULT 0,
-                    out_degree  INTEGER NOT NULL DEFAULT 0
+                    id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {NodePtr.Node.value}        INTEGER NOT NULL REFERENCES node(id),
+                    {NodePtr.InDegree.value}    INTEGER NOT NULL DEFAULT 0,
+                    {NodePtr.OutDegree.value}   INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS idx_node_ptr_node ON node_ptr(node);
 
                 CREATE TABLE IF NOT EXISTS edges (
-                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                    from_node_ptr   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    to_node_ptr     INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
+                    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {Edges.From.value}  INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Edges.To.value}    INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
                 );
                 CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node_ptr);
                 CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node_ptr);
@@ -135,7 +133,7 @@ class Sqlite3Interface(database_interface):
                     SELECT node.*
                     FROM node_ptr AS ptr
                     LEFT JOIN node AS node
-                        ON ptr.node = node.id
+                        ON ptr.{NodePtr.Node.value} = node.id
                     WHERE ptr.id = ?
                 """,
                 (node_ptr,)
@@ -170,7 +168,7 @@ class Sqlite3Interface(database_interface):
             pk = pk if pk != None else cursor.lastrowid
             cursor.execute(
                 f"""
-                    INSERT INTO node_ptr (node)
+                    INSERT INTO node_ptr ({NodePtr.Node.value})
                     VALUES (?)
                 """,
                 (pk,)
@@ -192,27 +190,33 @@ class Sqlite3Interface(database_interface):
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
 
-            existing = cusor.execute(
+            existing = cursor.execute(
                 f"""
                     SELECT id
                     FROM edges
-                    WHERE from_node_ptr = from_ptr
-                    AND to_node_ptr = to_ptr
-                """
+                    WHERE {Edges.From.value} = (?)
+                        AND {Edges.To.value} = (?)
+                """,
+                (from_ptr, to_ptr,)
             ).fetchone()
 
             if existing:
                 return
 
-            cusor.execute(
+            cursor.execute(
                 f"""
                     INSERT INTO edges
+                        ({Edges.From.value},{Edges.To.value})
                     VALUES (?,?)
                 """,
                 (from_ptr, to_ptr,)
             )
         except Exception as Error:
             raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
+        else:
+            conn.commit()
+        finally:
+            conn.close()
     
     def getAllChildren(self, node_ptr, use_dict_fact = True) -> dict[EdgesColumns.To.value, int]:
         try:
@@ -221,11 +225,25 @@ class Sqlite3Interface(database_interface):
                 conn.row_factory = dict_factory
             return conn.execute(
                 f"""
-                    SELECT edge.to_node_ptr
-                    FROM node_ptr AS ptr
-                    INNER JOIN edges as edge
-                        ON edge.from_node_ptr = ptr.id
-                    WHERE id = (?)
+                    SELECT {Edges.To.value}
+                    FROM edges
+                    WHERE {Edges.From.value} = (?)
+                """,
+                (node_ptr,)
+            ).fetchall()
+        finally:
+            conn.close()
+    
+    def getAllParents(self, node_ptr, use_dict_fact = True):
+        try:
+            conn = sqlite3.connect(self.database_file)
+            if use_dict_fact:
+                conn.row_factory = dict_factory
+            return conn.execute(
+                f"""
+                    SELECT {Edges.From.value}
+                    FROM edges
+                    WHERE {Edges.To.value} = (?)
                 """,
                 (node_ptr,)
             ).fetchall()
