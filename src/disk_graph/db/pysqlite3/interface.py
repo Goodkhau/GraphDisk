@@ -204,7 +204,7 @@ class Sqlite3Interface(database_interface):
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
 
-            existing = cursor.execute(
+            existing_connection = cursor.execute(
                 f"""
                     SELECT id
                     FROM edges
@@ -214,7 +214,7 @@ class Sqlite3Interface(database_interface):
                 (from_ptr, to_ptr,)
             ).fetchone()
 
-            if existing:
+            if existing_connection:
                 return
 
             cursor.execute(

@@ -69,7 +69,7 @@ def test_nested_children(cleanUp, metadata):
         for grand_child in grand_children:
             parents_of_grand = grand_child.parents()
             assert len(parents_of_grand) == 1, "grand childs should have one parent"
-            assert child == grand_child.parents()[0], "child and parent of grand child should match"
+            assert child == parents_of_grand[0], "child and parent of grand child should match"
 
 def test_duplicate_connection(cleanUp, metadata):
     graphs_folder = cleanUp
