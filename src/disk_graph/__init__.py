@@ -30,7 +30,7 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
     )
 
 class Graph:
-    def __init__(self, name: str, node_pk_type = ColumnType.Integer, graphs_folder: Path = Path(__file__).parent.parent):
+    def __init__(self, name: str, node_pk_type = ColumnType.Integer, graphs_folder: Path = Path.cwd()):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
