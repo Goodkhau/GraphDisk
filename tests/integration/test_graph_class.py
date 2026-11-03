@@ -180,3 +180,7 @@ def test_graph_config_reinstated(cleanUp, metadata, Config):
     new_config = Config.read(config_path)
     assert new_config != None, "new config should be created"
     assert new_config == configs | default_config, "new config should match original config with a message attached"
+
+@pytest.mark.integration
+def test_update_config(cleanUp, metadata, Config):
+    pass
