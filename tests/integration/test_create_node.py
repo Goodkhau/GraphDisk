@@ -24,7 +24,7 @@ def test_auto_incrementing(cleanUp, metadata, Config):
         node = graph.createNode({ "cust_field": test_str }).value()
         assert node.get('id') == i+1, "node object should be created with expected id"
 
-    rows = list(next(graph.getAllNodesByPage()))
+    rows = list(next(graph.getAllNodeValuesByPage()))
 
     assert len(rows) == num_rows, "the number of columns created should match what we created"
     for i in range(num_rows):
@@ -51,7 +51,7 @@ def test_auto_incrementing_passing_pk(cleanUp, metadata, Config):
         node = graph.createNode().value()
         assert node.get('id') == nonincrementing_id+i+1, "node object should be created with expected id"
 
-    rows = list(next(graph.getAllNodesByPage()))
+    rows = list(next(graph.getAllNodeValuesByPage()))
 
     assert len(rows) == first_segment+second_segment, "the number of columns created should match what we created"
     for i in range(first_segment):
@@ -87,7 +87,7 @@ def test_integer_invalid_pk(cleanUp, metadata, Config):
     assert isinstance(node.get('id'), int), "string number should convert to number"
     assert node.get('id') == int(valid_pk), "string number should convert to number"
 
-    rows = list(next(graph.getAllNodesByPage()))
+    rows = list(next(graph.getAllNodeValuesByPage()))
     assert len(rows) == 1, "there should be one row created"
     assert isinstance(rows[0].get("id"), int), "column id should be string"
     assert rows[0].get("id") == int(valid_pk), "node should be populated"
@@ -105,7 +105,7 @@ def test_integer_duplicate_pk(cleanUp, metadata, Config):
     node = graph.createNode({ "id": duplicate_pk })
     assert node == graph.createNode({ "id": duplicate_pk }), "duplicate pk should return node equal to existing node"
     
-    rows = list(next(graph.getAllNodesByPage()))
+    rows = list(next(graph.getAllNodeValuesByPage()))
     assert len(rows) == 1, "only one node should exist"
 
 @pytest.mark.integration
@@ -125,7 +125,7 @@ def test_string_empty_pk(cleanUp, metadata, Config):
     node = graph.createNode({ "id": white_space }).value()
     assert node.get('id') == white_space, "white space id should be accepted"
 
-    rows = list(next(graph.getAllNodesByPage()))
+    rows = list(next(graph.getAllNodeValuesByPage()))
     assert len(rows) == 2, "both rows should be created and seperate"
 
     empty_string_row = next(row for row in rows if row.get("id") == empty_string)
@@ -155,7 +155,7 @@ def test_string_invalid_pk(cleanUp, metadata, Config):
     assert isinstance(node.get('id'), str), "string number should convert to string"
     assert node.get('id') == str(valid_pk), "string number should convert to string"
 
-    rows = list(next(graph.getAllNodesByPage()))
+    rows = list(next(graph.getAllNodeValuesByPage()))
     assert len(rows) == 1, "there should be one row created"
     assert isinstance(rows[0].get("id"), str), "string number should convert to string"
     assert rows[0].get("id") == str(valid_pk), "node should be populated"

@@ -30,7 +30,7 @@ def calculateRowCreation(existing_columns: list[dict], existing_config: dict) ->
     )
 
 class Graph:
-    def __init__(self, name: str, node_pk_type = ColumnType.Integer, graphs_folder: Path = Path.cwd()):
+    def __init__(self, name: str, node_pk_type = ColumnType.Integer, graphs_folder: Path = Path.cwd() / "graphs"):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
@@ -47,16 +47,7 @@ class Graph:
     
     def updateTables(self):
         existing_columns = self.db.getTableColumns('node')
-
-        if not self.config_path.exists():
-            self.config_path.parent.mkdir(parents=True, exist_ok=True)
-            self.config_path.touch()
-            with open(self.config_path, "w") as file:
-                json.dump(default_config, file, indent=4)
-
-        with open(self.config_path, "r", encoding="utf-8") as file:
-            existing_config = json.load(file)
-        existing_config.pop("message", None)
+        existing_config = self.readConfigFile()
 
         new_columns, updated_config = calculateRowCreation(existing_columns, existing_config)
 
@@ -64,16 +55,53 @@ class Graph:
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
 
-        with open(self.config_path, "w") as file:
-            json.dump(default_config | updated_config, file)
+        self.updateConfigFile(updated_config)
+
+    def ifConfigNotExists(self):
+        if not self.config_path.exists():
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            self.config_path.touch()
+            self.updateConfigFile({})
     
-    def createNode(self, row_data: dict = {}):
+    def updateConfigFile(self, new_config: dict[str, str], update_tables = False):
+        try:
+            self.ifConfigNotExists()
+
+            with open(self.config_path, "w") as file:
+                json.dump(default_config | new_config, file, indent=4)
+
+            if update_tables:
+                self.updateTables()
+        except json.JSONDecodeError as Error:
+            logger.Error()
+            raise Exception("Invalid JSON")
+        except Exception as Error:
+            logger.Error()
+            raise Exception("Unexpected Error")
+
+    def readConfigFile(self, include_message = False) -> dict[str, ColumnType]:
+        try:
+            self.ifConfigNotExists()
+
+            with open(self.config_path, "r", encoding="utf-8") as file:
+                config = json.load(file)
+                if not include_message:
+                    config.pop("message", None)
+                return config
+        except json.JSONDecodeError as Error:
+            logger.Error()
+            raise Exception("Invalid JSON")
+        except Exception as Error:
+            logger.Error()
+            raise Exception("Unexpected Error")
+    
+    def createNode(self, row_data: dict = {}) -> Node:
         node_ptr = self.db.insertNode(row_data)
         return Node(node_ptr, self.db)
 
-    def getNode(self, pk):
+    def getNode(self, pk) -> Node:
         row = self.db.getNode(pk)
         return None if row == None else Node(row.get("id"), self.db)
     
-    def getAllNodesByPage(self, page_size = 1000, use_dict_fact = True):
+    def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> list[dict | tuple]:
         return self.db.paginateAllNodes(page_size, use_dict_fact)
