@@ -47,6 +47,15 @@ class NodePtr(str, Enum):
     InDegree    = "in_degree"
     OutDegree   = "out_degree"
 
+class Seen(str, Enum):
+    NodePtr = "node_ptr_id"
+    Session = "session_id"
+
+class Deque(str, Enum):
+    Position   = "position"
+    Session = "session_id"
+    NodePtr = "node_ptr"
+
 class Sqlite3Interface(database_interface):
     def __init__(self, name: str, graphs_folder: str):
         self.graph_path = Path.joinpath(graphs_folder, name)
@@ -74,8 +83,26 @@ class Sqlite3Interface(database_interface):
                     {Edges.From.value}  INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
                     {Edges.To.value}    INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
                 );
-                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node_ptr);
-                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node_ptr);
+                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges({Edges.From.value});
+                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges({Edges.To.value});
+
+                CREATE TABLE IF NOT EXISTS session (
+                    id          TEXT PRIMARY KEY,
+                    create_date INTEGER NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS seen (
+                    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {Seen.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Seen.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS idx_seen_nodeptrid_session ON seen({Seen.NodePtr.value},{Seen.Session.value});
+
+                CREATE TABLE IF NOT EXISTS deque (
+                    {Deque.Position.value}     INTEGER PRIMARY KEY,
+                    {Deque.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Deque.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
+                );
             """)
         finally:
             conn.close()

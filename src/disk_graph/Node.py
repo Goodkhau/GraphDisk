@@ -23,3 +23,6 @@ class Node:
 
     def parents(self) -> list[Node]:
         return [Node(connection.get(Edges.From.value), self.db) for connection in self.db.getAllParents(self.node_ptr)]
+    
+    def bfs(self):
+        pass
