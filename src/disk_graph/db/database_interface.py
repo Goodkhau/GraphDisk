@@ -1,4 +1,14 @@
 from abc import ABC, abstractmethod
+from enum import Enum
+
+class Edges(str, Enum):
+    From    = "from_node_ptr"
+    To      = "to_node_ptr"
+
+class NodePtr(str, Enum):
+    Node        = "node"
+    InDegree    = "in_degree"
+    OutDegree   = "out_degree"
 
 class database_interface(ABC):
     def __init__(self, name: str = ''):

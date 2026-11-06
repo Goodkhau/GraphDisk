@@ -1,11 +1,12 @@
 import sqlite3
 import logging
+import uuid
 from pathlib import Path
 from typing import Literal
 from enum import Enum
 from contextlib import closing
 
-from src.disk_graph.db.database_interface import database_interface
+from src.disk_graph.db.database_interface import database_interface, Edges, NodePtr
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,30 +39,51 @@ class ColumnType(str, Enum):
                     return member
         return super()._missing_(value)
 
-class Edges(str, Enum):
-    From    = "from_node_ptr"
-    To      = "to_node_ptr"
-
-class NodePtr(str, Enum):
-    Node        = "node"
-    InDegree    = "in_degree"
-    OutDegree   = "out_degree"
-
-class Seen(str, Enum):
+class Visited(str, Enum):
     NodePtr = "node_ptr_id"
     Session = "session_id"
 
 class Deque(str, Enum):
-    Position   = "position"
-    Session = "session_id"
-    NodePtr = "node_ptr"
+    Position    = "position"
+    Session     = "session_id"
+    NodePtr     = "node_ptr"
 
 class Sqlite3Interface(database_interface):
-    def __init__(self, name: str, graphs_folder: str):
+    class Deque:
+        def __init__(self, session_id = str(uuid.uuid4())):
+            self.session_id = session_id
+        
+        def empty(self):
+            pass
+
+        def stack(self, node_ptr_id):
+            pass
+
+        def pop(self):
+            pass
+
+        def enque(self, node_ptr_id):
+            pass
+
+        def remove(self):
+            pass
+
+        def top(self):
+            pass
+
+        def front():
+            pass
+    
+    class Visited:
+        def __init__(self, session_id = str(uuid.uuid4())):
+            self.session_id = session_id
+            
+    def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
+        self.createTables(node_pk_type=node_pk_type)
 
-    def createTables(self, node_pk_type: ColumnType = ColumnType.Integer):
+    def createTables(self, node_pk_type: ColumnType):
         try:
             conn = sqlite3.connect(self.database_file)
             conn.executescript(f"""
@@ -91,15 +113,15 @@ class Sqlite3Interface(database_interface):
                     create_date INTEGER NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS seen (
+                CREATE TABLE IF NOT EXISTS visited (
                     id                      INTEGER PRIMARY KEY AUTOINCREMENT,
-                    {Seen.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    {Seen.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
+                    {Visited.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Visited.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
                 );
-                CREATE INDEX IF NOT EXISTS idx_seen_nodeptrid_session ON seen({Seen.NodePtr.value},{Seen.Session.value});
+                CREATE INDEX IF NOT EXISTS idx_visited_nodeptrid_session ON visited({Visited.NodePtr.value},{Visited.Session.value});
 
                 CREATE TABLE IF NOT EXISTS deque (
-                    {Deque.Position.value}     INTEGER PRIMARY KEY,
+                    {Deque.Position.value}   INTEGER PRIMARY KEY,
                     {Deque.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
                     {Deque.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
                 );
@@ -259,7 +281,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def getAllChildren(self, node_ptr, use_dict_fact = True) -> dict[EdgesColumns.To.value, int]:
+    def getAllChildren(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -314,9 +336,33 @@ class Sqlite3Interface(database_interface):
                 return []
             else:
                 if not rows:
-                    return []
+                    return
 
                 yield rows
                 last = rows[-1].get('id') if use_dict_fact else rows[-1][0]
             finally:
                 conn.close()
+    
+    def bfsGenerator(self, node_ptr_id: int):
+        session_id = str(uuid.uuid4())
+        deque = self.Deque(session_id)
+        visited = self.Visited(session_id)
+
+        deque.queue(node_ptr_id)
+        while not deque.empty():
+            front = deque.front()
+            visited.add(front)
+
+            children = self.getAllChildren(front)
+            for child in children:
+                if visited.has(child):
+                    continue
+                deque.enque(child)
+            
+            yield front
+            
+
+    # deque.add(node)
+    # while deque(sessionid).notempty()
+    #   deque,
+    #   yield 

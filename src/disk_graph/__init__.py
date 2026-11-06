@@ -35,10 +35,8 @@ class Graph:
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
         self.graph_path.mkdir(parents=True, exist_ok=True)
-        self.db = db(name, graphs_folder=graphs_folder)
-
         try:
-            self.db.createTables(node_pk_type=node_pk_type)
+            self.db: database_interface = db(name, graphs_folder=graphs_folder, node_pk_type=node_pk_type)
         except Exception as Error:
             logger.critical("Failed to create required tables")
             raise Exception("Failed essential graph creation dependency") from Error
@@ -96,12 +94,12 @@ class Graph:
             raise Exception("Unexpected Error")
     
     def createNode(self, row_data: dict = {}) -> Node:
-        node_ptr = self.db.insertNode(row_data)
-        return Node(node_ptr, self.db)
+        node_ptr_id = self.db.insertNode(row_data)
+        return Node(node_ptr_id, self.db)
 
     def getNode(self, pk) -> Node:
         row = self.db.getNode(pk)
         return None if row == None else Node(row.get("id"), self.db)
     
-    def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> list[dict | tuple]:
+    def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> Generator[list[dict | tuple]]:
         return self.db.paginateAllNodes(page_size, use_dict_fact)

@@ -182,5 +182,9 @@ def test_graph_config_reinstated(cleanUp, metadata, Config):
     assert new_config == configs | default_config, "new config should match original config with a message attached"
 
 @pytest.mark.integration
-def test_update_config(cleanUp, metadata, Config):
+def test_update_config(cleanUp, metadata):
+    pass
+
+@pytest.mark.integration
+def test_all_node_generator(cleanUp, metadata):
     pass

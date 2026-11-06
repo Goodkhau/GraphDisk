@@ -93,7 +93,7 @@ def test_integer_invalid_pk(cleanUp, metadata, Config):
     assert rows[0].get("id") == int(valid_pk), "node should be populated"
 
 @pytest.mark.integration
-def test_integer_duplicate_pk(cleanUp, metadata, Config):
+def test_duplicate_pk(cleanUp, metadata, Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"

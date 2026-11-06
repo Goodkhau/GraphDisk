@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 
-from src.disk_graph.db.pysqlite3.interface import Edges
+from src.disk_graph.db.database_interface import database_interface, Edges
 
 @dataclass(order=True)
 class Node:
     def __init__(self, node_ptr, db):
         self.node_ptr = node_ptr
-        self.db = db
+        self.db: database_interface = db
     
     def value(self, use_dict_fact = True):
         return self.db.getNode(self.node_ptr, use_dict_fact);
@@ -23,6 +23,6 @@ class Node:
 
     def parents(self) -> list[Node]:
         return [Node(connection.get(Edges.From.value), self.db) for connection in self.db.getAllParents(self.node_ptr)]
-    
-    def bfs(self):
-        pass
+
+    def bfs(self) -> Generator[Node]:
+        return Node(self.db.bfsGenerator())
