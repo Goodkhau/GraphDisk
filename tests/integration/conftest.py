@@ -1,5 +1,4 @@
 import pytest
-import shutil
 import json
 from pathlib import Path
 
@@ -16,15 +15,6 @@ class ConfigClass:
                 return json.load(file)
         except:
             return None
-
-@pytest.fixture(scope="session")
-def cleanUp():
-    graphs_folder = Path(__file__).parent / 'graphs'
-
-    yield graphs_folder
-
-    shutil.rmtree(graphs_folder)
-    graphs_folder.mkdir(parents=True, exist_ok=True)
 
 @pytest.fixture
 def metadata(request):

@@ -70,6 +70,7 @@ class Graph:
 
             if update_tables:
                 self.updateTables()
+            return self
         except json.JSONDecodeError as Error:
             logger.Error()
             raise Exception("Invalid JSON")

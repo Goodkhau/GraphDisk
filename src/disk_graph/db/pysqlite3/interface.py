@@ -45,8 +45,8 @@ class Visited(str, Enum):
 
 class Deque(str, Enum):
     Position    = "position"
-    Session     = "session_id"
     NodePtr     = "node_ptr"
+    Session     = "session_id"
 
 class Sqlite3Interface(database_interface):
     class Deque:
@@ -63,7 +63,37 @@ class Sqlite3Interface(database_interface):
             pass
 
         def enque(self, node_ptr_id):
-            pass
+            try:
+                conn = sqlite3.connect(self.database_file)
+                cursor = conn.cursor()
+                min_pos = cursor.execute(
+                    f"""
+                        SELECT *
+                        FROM deque
+                        WHERE {Deque.Session.value} = ?
+                        ORDER BY {Deque.Position.value} ASC
+                        LIMIT 1
+                    """
+                ).fetchone()
+
+                if min_pos is None:
+                    min_pos = 0
+
+                cursor.execute(
+                    f"""
+                        INSERT INTO deque
+                        VALUES (?,?,?)
+                    """,
+                    (min_pos-1, node_ptr_id, self.session_id,)
+                )
+            except Exception as Error:
+                conn.rollback()
+                logger.error()
+                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
+            else:
+                conn.commit()
+            finally:
+                conn.close()
 
         def remove(self):
             pass
@@ -129,6 +159,22 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
+    def getTables(self):
+        try:
+            conn = sqlite3.connect(self.database_file)
+            tables = conn.execute(
+                """
+                    SELECT name
+                    FROM sqlite_schema
+                    WHERE type='table'
+                        AND name NOT LIKE 'sqlite.%';
+                """
+            ).fetchall()
+
+            return [table[0] for table in tables]
+        finally:
+            conn.close()
+
     def getTableColumns(self, name: str):
         try:
             conn = sqlite3.connect(self.database_file)
@@ -155,7 +201,7 @@ class Sqlite3Interface(database_interface):
                 """)
             except (ValueError, KeyError):
                 logger.exception(
-                    f"Failed to create column {column['name']} because of invalid column type:" + 
+                    f"Failed to create column {column['name']} because of invalid column type: " + 
                     f"{column['type']}. Expecting one of {[enum.name for enum in ColumnType]}."
                 )
                 failed_creation.append(column['name'])
@@ -275,9 +321,10 @@ class Sqlite3Interface(database_interface):
                 (from_ptr, to_ptr,)
             )
         except Exception as Error:
-            raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
+            raise Exception(f"Sqlite3Interface: Unexpected error adding connection from: {from_ptr}, to: {to_ptr} {Error}")
         else:
             conn.commit()
+            return cursor.lastrowid
         finally:
             conn.close()
     
@@ -348,7 +395,7 @@ class Sqlite3Interface(database_interface):
         deque = self.Deque(session_id)
         visited = self.Visited(session_id)
 
-        deque.queue(node_ptr_id)
+        deque.enque(node_ptr_id)
         while not deque.empty():
             front = deque.front()
             visited.add(front)
@@ -360,9 +407,3 @@ class Sqlite3Interface(database_interface):
                 deque.enque(child)
             
             yield front
-            
-
-    # deque.add(node)
-    # while deque(sessionid).notempty()
-    #   deque,
-    #   yield 

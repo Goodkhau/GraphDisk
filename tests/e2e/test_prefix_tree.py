@@ -5,11 +5,11 @@ from disk_graph import Graph, ColumnType
 def test_prefix_tree(case):
     data, output = case
 
-    test_graph = Graph("Test").updateConfigFile({
-        "layer": ColumnType.Integer.value
+    test_graph = Graph("Test", node_pk_type=ColumnType.String).updateConfigFile({
+        "layer": ColumnType.Integer.name
     })
 
-    root_node = test_graph.createNode({"id: 'root'"})
+    root_node = test_graph.createNode({"id": "root"})
 
     for string in data:
         curr = root_node
@@ -18,7 +18,7 @@ def test_prefix_tree(case):
         for index in range(len(words)):
             next_node = next((parent for parent in curr.parents() if parent.value().get('id') is words[index]), None)
             if next_node is None:
-                next_node = curr.add({"id": words[index], "layer": i+1})
+                next_node = curr.add({"id": words[index], "layer": index+1})
 
             curr = next_node
     

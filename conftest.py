@@ -1,8 +1,16 @@
 from pathlib import Path
 import pytest
 import json
+import shutil
 
-DATA_DIR = Path(__file__).parent / "data"
+@pytest.fixture(scope="session")
+def cleanUp():
+    graphs_folder = Path(__file__).parent / 'graphs'
+
+    yield graphs_folder
+
+    shutil.rmtree(graphs_folder)
+    graphs_folder.mkdir(parents=True, exist_ok=True)
 
 @pytest.fixture
 def case(request):
