@@ -11,6 +11,12 @@ class NodePtr(str, Enum):
     OutDegree   = "out_degree"
 
 class database_interface(ABC):
+    class Deque:
+        pass
+
+    class Set:
+        pass
+
     def __init__(self, name: str = ''):
         pass
 

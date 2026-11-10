@@ -3,7 +3,7 @@ from pathlib import Path
 
 from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
 
-expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'visited', 'deque']
+expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'collection', 'deque']
 
 @pytest.mark.pysqlite3_integration
 def test_table_creation(cleanUp):

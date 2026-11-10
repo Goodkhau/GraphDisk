@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal
 from enum import Enum
 from contextlib import closing
+from datetime import datetime
 
 from src.disk_graph.db.database_interface import database_interface, Edges, NodePtr
 
@@ -39,7 +40,7 @@ class ColumnType(str, Enum):
                     return member
         return super()._missing_(value)
 
-class Visited(str, Enum):
+class Collection(str, Enum):
     NodePtr = "node_ptr_id"
     Session = "session_id"
 
@@ -49,35 +50,61 @@ class Deque(str, Enum):
     Session     = "session_id"
 
 class Sqlite3Interface(database_interface):
+    def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
+        self.graph_path = Path.joinpath(graphs_folder, name)
+        self.database_file = Path.joinpath(self.graph_path, "graph.db")
+        self.createTables(node_pk_type=node_pk_type)
+
+    def insertSession(self, session_id: str):
+        try:
+            conn = sqlite3.connect(self.db.database_file)
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                    INSERT OR IGNORE INTO session
+                    VALUES (?,?)
+                """,
+                (session_id, datetime.now(),)
+            )
+        except:
+            conn.rollback()
+            logger.error()
+            raise Exception(f"Failed to insert session id: {session_id}")
+        else:
+            conn.commit()
+            return session_id
+        finally:
+            conn.close()
+
     class Deque:
-        def __init__(self, session_id = str(uuid.uuid4())):
+        def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
             self.session_id = session_id
+            self.db = db
+            self.db.insertSession(self.session_id)
         
         def empty(self):
-            pass
-
-        def stack(self, node_ptr_id):
-            pass
-
-        def pop(self):
-            pass
-
-        def enque(self, node_ptr_id):
             try:
-                conn = sqlite3.connect(self.database_file)
-                cursor = conn.cursor()
-                min_pos = cursor.execute(
+                conn = sqlite3(self.db.database_file)
+                return conn.execute(
                     f"""
-                        SELECT *
+                        SELECT COUNT(*)
                         FROM deque
                         WHERE {Deque.Session.value} = ?
-                        ORDER BY {Deque.Position.value} ASC
-                        LIMIT 1
-                    """
-                ).fetchone()
+                    """,
+                    (self.session_id,)
+                ).fetchone()[0]
+            finally:
+                conn.close()
 
-                if min_pos is None:
-                    min_pos = 0
+        def push_front(self, node_ptr_id):
+            pass
+
+        def push_back(self, node_ptr_id):
+            try:
+                min_pos = self.front()
+
+                conn = sqlite3.connect(self.db.database_file)
+                cursor = conn.cursor()
 
                 cursor.execute(
                     f"""
@@ -92,26 +119,117 @@ class Sqlite3Interface(database_interface):
                 raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
             else:
                 conn.commit()
+                return min_pos-1
             finally:
                 conn.close()
 
-        def remove(self):
-            pass
-
-        def top(self):
-            pass
-
-        def front():
-            pass
-    
-    class Visited:
-        def __init__(self, session_id = str(uuid.uuid4())):
-            self.session_id = session_id
+        def front(self):
+            try:
+                conn = sqlite3.connect(self.database_file)
             
-    def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
-        self.graph_path = Path.joinpath(graphs_folder, name)
-        self.database_file = Path.joinpath(self.graph_path, "graph.db")
-        self.createTables(node_pk_type=node_pk_type)
+                min_pos = conn.execute(
+                    f"""
+                        SELECT *
+                        FROM deque
+                        WHERE {Deque.Session.value} = ?
+                        ORDER BY {Deque.Position.value} ASC
+                        LIMIT 1
+                    """
+                ).fetchone()
+
+                return 0 if min_pos is None else min_pos[0]
+            except Exception as Error:
+                conn.rollback()
+                logger.error()
+                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
+            finally:
+                conn.close()
+
+        def back(self):
+            try:
+                conn = sqlite3.connect(self.database_file)
+            
+                min_pos = conn.execute(
+                    f"""
+                        SELECT *
+                        FROM deque
+                        WHERE {Deque.Session.value} = ?
+                        ORDER BY {Deque.Position.value} DESC
+                        LIMIT 1
+                    """
+                ).fetchone()
+
+                return 0 if min_pos is None else min_pos[0]
+            except Exception as Error:
+                conn.rollback()
+                logger.error()
+                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
+            finally:
+                conn.close()
+
+        def pop_front(self):
+            try:
+                min_pos = self.front()
+
+                conn = sqlite3(self.db.database_file)
+                cursor = conn.cursor()
+
+                cursor.execute(
+                    f"""
+                        DELETE FROM deque
+                        WHERE {Deque.Position.value} = ?
+                    """,
+                    (min_pos,)
+                )
+            finally:
+                conn.close()
+
+        def pop_back(self):
+            pass
+
+    class Set:
+        def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
+            self.session_id = session_id
+            self.db = db
+            self.db.insertSession(self.session_id)
+        
+        def has(self, node_ptr_id):
+            try:
+                conn = sqlite3(self.db.database_file)
+                conn.execute(
+                    f"""
+                        SELECT *
+                        FROM set
+                        WHERE {Collection.NodePtr.value} = ?
+                            AND {Collection.Session.value} = ?
+                    """,
+                    (node_ptr_id, self.session_id,)
+                )
+            except Exception:
+                logger.error()
+                raise Exception(f"Unexpected error, failed to check if set 'has' {node_ptr_id} on session {self.session_id}")
+            finally:
+                conn.close()
+        
+        def add(self, node_ptr_id):
+            try:
+                conn = sqlite3(self.db.database_file)
+                conn.execute(
+                    f"""
+                        INSERT OR IGNORE INTO set
+                        ({Collection.NodePtr.value},{Collection.Session.value})
+                        VALUES (?,?)
+                    """,
+                    (node_ptr_id, self.session_id,)
+                )
+            except Exception:
+                logger.error()
+                raise Exception(f"Unexpected error, failed to check if set 'has' {node_ptr_id} on session {self.session_id}")
+            else:
+                conn.commit()
+                return self
+            finally:
+                conn.close()
 
     def createTables(self, node_pk_type: ColumnType):
         try:
@@ -140,15 +258,15 @@ class Sqlite3Interface(database_interface):
 
                 CREATE TABLE IF NOT EXISTS session (
                     id          TEXT PRIMARY KEY,
-                    create_date INTEGER NOT NULL
+                    create_date INTEGER
                 );
 
-                CREATE TABLE IF NOT EXISTS visited (
+                CREATE TABLE IF NOT EXISTS collection (
                     id                      INTEGER PRIMARY KEY AUTOINCREMENT,
-                    {Visited.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    {Visited.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
+                    {Collection.NodePtr.value}     INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Collection.Session.value}     TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
                 );
-                CREATE INDEX IF NOT EXISTS idx_visited_nodeptrid_session ON visited({Visited.NodePtr.value},{Visited.Session.value});
+                CREATE INDEX IF NOT EXISTS idx_collection_nodeptrid_session ON collection({Collection.NodePtr.value},{Collection.Session.value});
 
                 CREATE TABLE IF NOT EXISTS deque (
                     {Deque.Position.value}   INTEGER PRIMARY KEY,
@@ -366,7 +484,6 @@ class Sqlite3Interface(database_interface):
         page_size = min(MAX_PAGE_SIZE, page_size)
         page_size = max(MIN_PAGE_SIZE, page_size)
 
-        rows = True
         last = False
         while True:
             try:
@@ -376,7 +493,7 @@ class Sqlite3Interface(database_interface):
 
                 rows = conn.execute(
                     "SELECT * FROM node WHERE id > ? ORDER BY id LIMIT ?" if last else "select * FROM node ORDER BY id LIMIT ?",
-                    (last, page_size) if last else (page_size,)
+                    (last, page_size,) if last else (page_size,)
                 ).fetchall()
             except:
                 logger.exception(f"Failed to get row for page size {page_size} and last {last}")
@@ -389,21 +506,3 @@ class Sqlite3Interface(database_interface):
                 last = rows[-1].get('id') if use_dict_fact else rows[-1][0]
             finally:
                 conn.close()
-    
-    def bfsGenerator(self, node_ptr_id: int):
-        session_id = str(uuid.uuid4())
-        deque = self.Deque(session_id)
-        visited = self.Visited(session_id)
-
-        deque.enque(node_ptr_id)
-        while not deque.empty():
-            front = deque.front()
-            visited.add(front)
-
-            children = self.getAllChildren(front)
-            for child in children:
-                if visited.has(child):
-                    continue
-                deque.enque(child)
-            
-            yield front

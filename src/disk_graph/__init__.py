@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 from src.disk_graph.db.pysqlite3.interface import ColumnType, Sqlite3Interface as db
+from src.disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
 
 logging.basicConfig(level=logging.INFO)
@@ -72,7 +73,7 @@ class Graph:
                 self.updateTables()
             return self
         except json.JSONDecodeError as Error:
-            logger.Error()
+            logger.error("Invalid JSON")
             raise Exception("Invalid JSON")
         except Exception as Error:
             logger.Error()
@@ -104,3 +105,21 @@ class Graph:
     
     def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> Generator[list[dict | tuple]]:
         return self.db.paginateAllNodes(page_size, use_dict_fact)
+    
+    def bfsGenerator(self, node: Node):
+        session_id = str(uuid.uuid4())
+        deque = self.db.Deque(session_id)
+        visited = self.db.Visited(session_id)
+
+        deque.push_back(node.node_ptr)
+        while not deque.empty():
+            front = deque.pop_front()
+            visited.add(front)
+
+            children = self.getAllChildren(front)
+            for child in children:
+                if visited.has(child):
+                    continue
+                deque.push_back(child)
+            
+            yield front
