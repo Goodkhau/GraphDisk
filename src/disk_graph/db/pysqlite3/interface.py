@@ -12,8 +12,6 @@ from src.disk_graph.db.database_interface import database_interface, Edges, Node
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-valid_column_types = Literal["Integer", "Float", "String", "Blob"]
-
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
 
@@ -57,7 +55,7 @@ class Sqlite3Interface(database_interface):
 
     def insertSession(self, session_id: str):
         try:
-            conn = sqlite3.connect(self.db.database_file)
+            conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
             cursor.execute(
                 f"""
@@ -75,16 +73,23 @@ class Sqlite3Interface(database_interface):
             return session_id
         finally:
             conn.close()
+    
+    def createDeque(self, session_id = str(uuid.uuid4())):
+        self.insertSession(session_id)
+        return self.Deque(self, session_id)
+    
+    def createCollection(self, session_id = str(uuid.uuid4())):
+        self.insertSession(session_id)
+        return self.Collection(self, session_id)
 
     class Deque:
-        def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
+        def __init__(self, db: database_interface, session_id):
             self.session_id = session_id
             self.db = db
-            self.db.insertSession(self.session_id)
         
         def empty(self):
             try:
-                conn = sqlite3(self.db.database_file)
+                conn = sqlite3.connect(self.db.database_file)
                 return conn.execute(
                     f"""
                         SELECT COUNT(*)
@@ -92,7 +97,7 @@ class Sqlite3Interface(database_interface):
                         WHERE {Deque.Session.value} = ?
                     """,
                     (self.session_id,)
-                ).fetchone()[0]
+                ).fetchone()[0] == 0
             finally:
                 conn.close()
 
@@ -102,6 +107,9 @@ class Sqlite3Interface(database_interface):
         def push_back(self, node_ptr_id):
             try:
                 min_pos = self.front()
+
+                if min_pos is None:
+                    min_pos = 0
 
                 conn = sqlite3.connect(self.db.database_file)
                 cursor = conn.cursor()
@@ -123,21 +131,22 @@ class Sqlite3Interface(database_interface):
             finally:
                 conn.close()
 
-        def front(self):
+        def front(self) -> int | None:
             try:
-                conn = sqlite3.connect(self.database_file)
+                conn = sqlite3.connect(self.db.database_file)
             
                 min_pos = conn.execute(
                     f"""
-                        SELECT *
+                        SELECT {Deque.NodePtr.value}
                         FROM deque
                         WHERE {Deque.Session.value} = ?
                         ORDER BY {Deque.Position.value} ASC
                         LIMIT 1
-                    """
+                    """,
+                    (self.session_id,)
                 ).fetchone()
 
-                return 0 if min_pos is None else min_pos[0]
+                return None if min_pos is None else min_pos[0]
             except Exception as Error:
                 conn.rollback()
                 logger.error()
@@ -147,19 +156,20 @@ class Sqlite3Interface(database_interface):
 
         def back(self):
             try:
-                conn = sqlite3.connect(self.database_file)
+                conn = sqlite3.connect(self.db.database_file)
             
                 min_pos = conn.execute(
                     f"""
-                        SELECT *
+                        SELECT {Deque.NodePtr.value}
                         FROM deque
                         WHERE {Deque.Session.value} = ?
                         ORDER BY {Deque.Position.value} DESC
                         LIMIT 1
-                    """
+                    """,
+                    (self.session_id,)
                 ).fetchone()
 
-                return 0 if min_pos is None else min_pos[0]
+                return None if min_pos is None else min_pos[0]
             except Exception as Error:
                 conn.rollback()
                 logger.error()
@@ -170,6 +180,9 @@ class Sqlite3Interface(database_interface):
         def pop_front(self):
             try:
                 min_pos = self.front()
+
+                if min_pos is None:
+                    min_pos = 0
 
                 conn = sqlite3(self.db.database_file)
                 cursor = conn.cursor()
@@ -187,7 +200,7 @@ class Sqlite3Interface(database_interface):
         def pop_back(self):
             pass
 
-    class Set:
+    class Collection:
         def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
             self.session_id = session_id
             self.db = db
@@ -199,7 +212,7 @@ class Sqlite3Interface(database_interface):
                 conn.execute(
                     f"""
                         SELECT *
-                        FROM set
+                        FROM collection
                         WHERE {Collection.NodePtr.value} = ?
                             AND {Collection.Session.value} = ?
                     """,
@@ -207,7 +220,7 @@ class Sqlite3Interface(database_interface):
                 )
             except Exception:
                 logger.error()
-                raise Exception(f"Unexpected error, failed to check if set 'has' {node_ptr_id} on session {self.session_id}")
+                raise Exception(f"Unexpected error, failed to check if collection 'has' {node_ptr_id} on session {self.session_id}")
             finally:
                 conn.close()
         
@@ -216,7 +229,7 @@ class Sqlite3Interface(database_interface):
                 conn = sqlite3(self.db.database_file)
                 conn.execute(
                     f"""
-                        INSERT OR IGNORE INTO set
+                        INSERT OR IGNORE INTO collection
                         ({Collection.NodePtr.value},{Collection.Session.value})
                         VALUES (?,?)
                     """,
@@ -224,7 +237,7 @@ class Sqlite3Interface(database_interface):
                 )
             except Exception:
                 logger.error()
-                raise Exception(f"Unexpected error, failed to check if set 'has' {node_ptr_id} on session {self.session_id}")
+                raise Exception(f"Unexpected error, failed to check if collection 'has' {node_ptr_id} on session {self.session_id}")
             else:
                 conn.commit()
                 return self
