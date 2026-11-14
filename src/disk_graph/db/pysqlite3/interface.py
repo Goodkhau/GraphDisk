@@ -106,13 +106,13 @@ class Sqlite3Interface(database_interface):
 
         def push_back(self, node_ptr_id):
             try:
-                min_pos = self.front()
-
-                if min_pos is None:
-                    min_pos = 0
+                min_pos = self.front(field=Deque.Position.value)
 
                 conn = sqlite3.connect(self.db.database_file)
                 cursor = conn.cursor()
+
+                if min_pos is None:
+                    min_pos = 0
 
                 cursor.execute(
                     f"""
@@ -127,11 +127,34 @@ class Sqlite3Interface(database_interface):
                 raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
             else:
                 conn.commit()
-                return min_pos-1
+                return node_ptr_id
             finally:
                 conn.close()
 
-        def front(self) -> int | None:
+        def front(self, field = Deque.NodePtr.value) -> int | None:
+            try:
+                conn = sqlite3.connect(self.db.database_file)
+            
+                min_pos = conn.execute(
+                    f"""
+                        SELECT {field}
+                        FROM deque
+                        WHERE {Deque.Session.value} = ?
+                        ORDER BY {Deque.Position.value} DESC
+                        LIMIT 1
+                    """,
+                    (self.session_id,)
+                ).fetchone()
+
+                return None if min_pos is None else min_pos[0]
+            except Exception as Error:
+                conn.rollback()
+                logger.error()
+                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos[0]}, nodeptr: {node_ptr_id}, session: {self.session_id}")
+            finally:
+                conn.close()
+
+        def back(self):
             try:
                 conn = sqlite3.connect(self.db.database_file)
             
@@ -150,52 +173,40 @@ class Sqlite3Interface(database_interface):
             except Exception as Error:
                 conn.rollback()
                 logger.error()
-                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
-            finally:
-                conn.close()
-
-        def back(self):
-            try:
-                conn = sqlite3.connect(self.db.database_file)
-            
-                min_pos = conn.execute(
-                    f"""
-                        SELECT {Deque.NodePtr.value}
-                        FROM deque
-                        WHERE {Deque.Session.value} = ?
-                        ORDER BY {Deque.Position.value} DESC
-                        LIMIT 1
-                    """,
-                    (self.session_id,)
-                ).fetchone()
-
-                return None if min_pos is None else min_pos[0]
-            except Exception as Error:
-                conn.rollback()
-                logger.error()
-                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
+                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos[0]}, nodeptr: {node_ptr_id}, session: {self.session_id}")
             finally:
                 conn.close()
 
         def pop_front(self):
+            conn = None
+
             try:
-                min_pos = self.front()
+                min_pos = self.front(field=Deque.Position.value)
 
                 if min_pos is None:
-                    min_pos = 0
+                    return None
 
-                conn = sqlite3(self.db.database_file)
+                conn = sqlite3.connect(self.db.database_file)
                 cursor = conn.cursor()
 
-                cursor.execute(
+                deleted_rows = cursor.execute(
                     f"""
                         DELETE FROM deque
                         WHERE {Deque.Position.value} = ?
+                        RETURNING *
                     """,
                     (min_pos,)
-                )
+                ).fetchall()
+            except Exception as Error:
+                conn.rollback()
+                logger.error()
+                raise Exception(f"Unexpected Error, failed to delete positon: {min_pos}. Error: {Error}")
+            else:
+                conn.commit()
+                return deleted_rows[0][1]
             finally:
-                conn.close()
+                if conn:
+                    conn.close()
 
         def pop_back(self):
             pass
