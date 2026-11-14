@@ -11,9 +11,8 @@ def test_deque_push_back(cleanUp):
     node_ptr_1 = 1
     node_ptr_2 = 2
 
-    database = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
+    deque = Sqlite3Interface(name, graphs_folder, ColumnType.Integer).createDeque()
 
-    deque = database.createDeque()
     assert deque.empty() == True, "deque should initially be empty"
     assert deque.front() == None, "front position should be none"
     assert deque.back() == None, "back position should be none"
@@ -36,8 +35,7 @@ def test_deque_pop_front(cleanUp):
     node_ptr_1 = 1
     node_ptr_2 = 2
 
-    database = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
-    deque = database.createDeque()
+    deque = Sqlite3Interface(name, graphs_folder, ColumnType.Integer).createDeque()
 
     deque.push_back(node_ptr_1)
     deque.push_back(node_ptr_2)

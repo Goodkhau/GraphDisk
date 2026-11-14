@@ -51,6 +51,7 @@ class Sqlite3Interface(database_interface):
     def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.graph_path.mkdir(parents=True, exist_ok=True)
+
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
         self.createTables(node_pk_type=node_pk_type)
 
@@ -220,8 +221,8 @@ class Sqlite3Interface(database_interface):
         
         def has(self, node_ptr_id):
             try:
-                conn = sqlite3(self.db.database_file)
-                conn.execute(
+                conn = sqlite3.connect(self.db.database_file)
+                coll_row = conn.execute(
                     f"""
                         SELECT *
                         FROM collection
@@ -229,16 +230,24 @@ class Sqlite3Interface(database_interface):
                             AND {Collection.Session.value} = ?
                     """,
                     (node_ptr_id, self.session_id,)
-                )
+                ).fetchone()
+
+                return coll_row is not None
             except Exception:
-                logger.error()
-                raise Exception(f"Unexpected error, failed to check if collection 'has' {node_ptr_id} on session {self.session_id}")
+                logger.error("Failed to check if database has ptr")
+                raise Exception(f"Unexpected error, failed to check if collection has ptr: {node_ptr_id} on session {self.session_id}")
             finally:
-                conn.close()
+                if conn:
+                    conn.close()
         
         def add(self, node_ptr_id):
+            conn = None
+
             try:
-                conn = sqlite3(self.db.database_file)
+                if self.has(node_ptr_id):
+                    return self
+
+                conn = sqlite3.connect(self.db.database_file)
                 conn.execute(
                     f"""
                         INSERT OR IGNORE INTO collection
@@ -247,14 +256,15 @@ class Sqlite3Interface(database_interface):
                     """,
                     (node_ptr_id, self.session_id,)
                 )
-            except Exception:
-                logger.error()
-                raise Exception(f"Unexpected error, failed to check if collection 'has' {node_ptr_id} on session {self.session_id}")
+            except Exception as Error:
+                logger.error("Failed to add node_ptr")
+                raise Exception(f"Unexpected error, failed to check if collection 'has' {node_ptr_id} on session {self.session_id}. Error: {Error}")
             else:
                 conn.commit()
                 return self
             finally:
-                conn.close()
+                if conn:
+                    conn.close()
 
     def createTables(self, node_pk_type: ColumnType):
         try:
