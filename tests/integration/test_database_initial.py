@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 
 from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
+from src.disk_graph.db.database_interface import database_interface
 
 expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'collection', 'deque']
 
@@ -11,6 +12,6 @@ def test_table_creation(cleanUp):
     name = "table_creation"
     (graphs_folder / name).mkdir()
 
-    database = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
+    database: database_interface = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
 
     assert set(database.getTables()) == set(expected_rows)
