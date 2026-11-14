@@ -7,7 +7,6 @@ from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
 def test_deque_push_back(cleanUp):
     graphs_folder = cleanUp
     name = "deque_push_back"
-    (graphs_folder / name).mkdir()
 
     node_ptr_1 = 1
     node_ptr_2 = 2
@@ -33,7 +32,6 @@ def test_deque_push_back(cleanUp):
 def test_deque_pop_front(cleanUp):
     graphs_folder = cleanUp
     name = "deque_pop_front"
-    (graphs_folder / name).mkdir()
 
     node_ptr_1 = 1
     node_ptr_2 = 2

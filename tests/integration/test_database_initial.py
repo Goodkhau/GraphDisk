@@ -10,7 +10,6 @@ expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'col
 def test_table_creation(cleanUp):
     graphs_folder = cleanUp
     name = "table_creation"
-    (graphs_folder / name).mkdir()
 
     database: database_interface = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
 

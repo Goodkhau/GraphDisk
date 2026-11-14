@@ -114,6 +114,9 @@ class Graph:
         deque.push_back(node.node_ptr)
         while not deque.empty():
             front = deque.pop_front()
+
+            if visted.has(front):
+                continue
             visited.add(front)
 
             children = self.getAllChildren(front)

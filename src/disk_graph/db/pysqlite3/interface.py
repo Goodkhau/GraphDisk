@@ -50,6 +50,7 @@ class Deque(str, Enum):
 class Sqlite3Interface(database_interface):
     def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
         self.graph_path = Path.joinpath(graphs_folder, name)
+        self.graph_path.mkdir(parents=True, exist_ok=True)
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
         self.createTables(node_pk_type=node_pk_type)
 
