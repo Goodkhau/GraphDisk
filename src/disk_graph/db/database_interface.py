@@ -29,19 +29,19 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def get_tables(self):
+    def select_tables(self):
         pass
 
     @abstractmethod
-    def get_table_columns(self, name: str):
+    def select_table_columns(self, name: str):
         pass
 
     @abstractmethod
-    def create_node_columns(self, new_columns: list[dict]):
+    def alter_node_columns(self, new_columns: list[dict]):
         pass
 
     @abstractmethod
-    def get_node(self, node_ptr, use_dict_fact):
+    def select_node(self, node_ptr, use_dict_fact):
         pass
 
     @abstractmethod
@@ -49,15 +49,15 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def add_connection(self, from_ptr, to_ptr, throw_on_duplicate):
+    def insert_edge(self, from_ptr, to_ptr, throw_on_duplicate):
         pass
 
     @abstractmethod
-    def get_all_children(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+    def select_edge_to_ptr_from(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
         pass
 
     @abstractmethod
-    def get_all_parents(self, node_ptr, use_dict_fact = True):
+    def select_edge_from_ptr_to(self, node_ptr, use_dict_fact = True):
         pass
 
     @abstractmethod

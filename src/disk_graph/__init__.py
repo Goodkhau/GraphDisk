@@ -47,12 +47,12 @@ class Graph:
             self.updateTables()
     
     def updateTables(self):
-        existing_columns = self.db.get_table_columns('node')
+        existing_columns = self.db.select_table_columns('node')
         existing_config = self.readConfigFile()
 
         new_columns, updated_config = calculateRowCreation(existing_columns, existing_config)
 
-        success_cols, failed_cols = self.db.create_node_columns(new_columns)
+        success_cols, failed_cols = self.db.alter_node_columns(new_columns)
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
 
@@ -102,7 +102,7 @@ class Graph:
         return Node(node_ptr_id, self.db)
 
     def getNode(self, pk) -> Node:
-        row = self.db.get_node(pk)
+        row = self.db.select_node(pk)
         return None if row == None else Node(row.get("id"), self.db)
     
     def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> Generator[list[dict | tuple]]:

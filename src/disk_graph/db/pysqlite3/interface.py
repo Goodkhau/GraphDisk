@@ -312,7 +312,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def get_tables(self):
+    def select_tables(self):
         try:
             conn = sqlite3.connect(self.database_file)
             tables = conn.execute(
@@ -328,7 +328,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def get_table_columns(self, name: str):
+    def select_table_columns(self, name: str):
         try:
             conn = sqlite3.connect(self.database_file)
             conn.row_factory = dict_factory
@@ -339,7 +339,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def create_node_columns(self, new_columns: list[dict]):
+    def alter_node_columns(self, new_columns: list[dict]):
         successful_creation = []
         failed_creation = []
         for column in new_columns:
@@ -371,7 +371,7 @@ class Sqlite3Interface(database_interface):
             failed_creation
         )
     
-    def get_node(self, node_ptr, use_dict_fact):
+    def select_node(self, node_ptr, use_dict_fact):
         conn = None
 
         try:
@@ -393,7 +393,7 @@ class Sqlite3Interface(database_interface):
                 conn.close()
 
     def insert_node(self, row_data: dict):
-        columns = self.get_table_columns('node')
+        columns = self.select_table_columns('node')
 
         pk = row_data.get('id')
         is_incrementing_pk = any(column['name'] == 'id' and column['type'] == ColumnType.Integer.value for column in columns)
@@ -450,7 +450,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def add_connection(self, from_ptr, to_ptr, throw_on_duplicate):
+    def insert_edge(self, from_ptr, to_ptr, throw_on_duplicate):
         try:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
@@ -484,7 +484,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def get_all_children(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+    def select_edge_to_ptr_from(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -500,7 +500,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def get_all_parents(self, node_ptr, use_dict_fact = True):
+    def select_edge_from_ptr_to(self, node_ptr, use_dict_fact = True):
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:

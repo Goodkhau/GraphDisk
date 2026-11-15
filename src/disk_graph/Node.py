@@ -9,20 +9,20 @@ class Node:
         self.db: database_interface = db
     
     def value(self, use_dict_fact = True):
-        return self.db.get_node(self.node_ptr, use_dict_fact);
+        return self.db.select_node(self.node_ptr, use_dict_fact);
 
     def add(self, to_node_ptr: any | Node, strict = False) -> self:
         if isinstance(to_node_ptr, Node):
-            self.db.add_connection(from_ptr=self.node_ptr, to_ptr=to_node_ptr.node_ptr, throw_on_duplicate=strict)
+            self.db.insert_edge(from_ptr=self.node_ptr, to_ptr=to_node_ptr.node_ptr, throw_on_duplicate=strict)
         elif isinstance(to_node_ptr, dict):
-            self.db.add_connection(from_ptr=self.node_ptr, to_ptr=self.db.insert_node(to_node_ptr), throw_on_duplicate=strict)
+            self.db.insert_edge(from_ptr=self.node_ptr, to_ptr=self.db.insert_node(to_node_ptr), throw_on_duplicate=strict)
         else:
-            self.db.add_connection(from_ptr=self.node_ptr, to_ptr=to_node_ptr, throw_on_duplicate=strict)
+            self.db.insert_edge(from_ptr=self.node_ptr, to_ptr=to_node_ptr, throw_on_duplicate=strict)
 
         return self
 
     def children(self) -> list[Node]:
-        return [Node(connection.get(Edges.To.value), self.db) for connection in self.db.get_all_children(self.node_ptr)]
+        return [Node(connection.get(Edges.To.value), self.db) for connection in self.db.select_edge_to_ptr_from(self.node_ptr)]
 
     def parents(self) -> list[Node]:
-        return [Node(connection.get(Edges.From.value), self.db) for connection in self.db.get_all_parents(self.node_ptr)]
+        return [Node(connection.get(Edges.From.value), self.db) for connection in self.db.select_edge_from_ptr_to(self.node_ptr)]
