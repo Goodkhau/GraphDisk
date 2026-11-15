@@ -22,7 +22,7 @@ class Node:
         return self
 
     def children(self) -> list[Node]:
-        return [Node(connection.get(Edges.To.value), self.db) for connection in self.db.select_edge_to_ptr_from(self.node_ptr)]
+        return [Node(connection.get(Edges.To.value), self.db) for connection in self.db.select_edge_to_ptr(self.node_ptr)]
 
     def parents(self) -> list[Node]:
-        return [Node(connection.get(Edges.From.value), self.db) for connection in self.db.select_edge_from_ptr_to(self.node_ptr)]
+        return [Node(connection.get(Edges.From.value), self.db) for connection in self.db.select_edge_from_ptr(self.node_ptr)]

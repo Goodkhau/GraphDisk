@@ -484,7 +484,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def select_edge_to_ptr_from(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+    def select_edge_to_ptr(self, from_node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -495,12 +495,12 @@ class Sqlite3Interface(database_interface):
                     FROM edges
                     WHERE {Edges.From.value} = (?)
                 """,
-                (node_ptr,)
+                (from_node_ptr,)
             ).fetchall()
         finally:
             conn.close()
     
-    def select_edge_from_ptr_to(self, node_ptr, use_dict_fact = True):
+    def select_edge_from_ptr(self, to_node_ptr, use_dict_fact = True):
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -511,7 +511,7 @@ class Sqlite3Interface(database_interface):
                     FROM edges
                     WHERE {Edges.To.value} = (?)
                 """,
-                (node_ptr,)
+                (to_node_ptr,)
             ).fetchall()
         finally:
             conn.close()

@@ -53,11 +53,11 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def select_edge_to_ptr_from(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+    def select_edge_to_ptr(self, from_node_ptr, use_dict_fact = True):
         pass
 
     @abstractmethod
-    def select_edge_from_ptr_to(self, node_ptr, use_dict_fact = True):
+    def select_edge_from_ptr(self, to_node_ptr, use_dict_fact = True):
         pass
 
     @abstractmethod
