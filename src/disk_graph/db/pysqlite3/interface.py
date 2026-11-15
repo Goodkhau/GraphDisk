@@ -53,9 +53,9 @@ class Sqlite3Interface(database_interface):
         self.graph_path.mkdir(parents=True, exist_ok=True)
 
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
-        self.createTables(node_pk_type=node_pk_type)
+        self.create_tables(node_pk_type=node_pk_type)
 
-    def insertSession(self, session_id: str):
+    def insert_session(self, session_id: str):
         try:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
@@ -77,11 +77,11 @@ class Sqlite3Interface(database_interface):
             conn.close()
     
     def createDeque(self, session_id = str(uuid.uuid4())):
-        self.insertSession(session_id)
+        self.insert_session(session_id)
         return self.Deque(self, session_id)
     
     def createCollection(self, session_id = str(uuid.uuid4())):
-        self.insertSession(session_id)
+        self.insert_session(session_id)
         return self.Collection(self, session_id)
 
     class Deque:
@@ -217,7 +217,7 @@ class Sqlite3Interface(database_interface):
         def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
             self.session_id = session_id
             self.db = db
-            self.db.insertSession(self.session_id)
+            self.db.insert_session(self.session_id)
         
         def has(self, node_ptr_id):
             try:
@@ -266,7 +266,7 @@ class Sqlite3Interface(database_interface):
                 if conn:
                     conn.close()
 
-    def createTables(self, node_pk_type: ColumnType):
+    def create_tables(self, node_pk_type: ColumnType):
         try:
             conn = sqlite3.connect(self.database_file)
             conn.executescript(f"""
@@ -312,7 +312,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def getTables(self):
+    def get_tables(self):
         try:
             conn = sqlite3.connect(self.database_file)
             tables = conn.execute(
@@ -328,7 +328,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def getTableColumns(self, name: str):
+    def get_table_columns(self, name: str):
         try:
             conn = sqlite3.connect(self.database_file)
             conn.row_factory = dict_factory
@@ -339,7 +339,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def createNodeColumns(self, new_columns: list[dict]):
+    def create_node_columns(self, new_columns: list[dict]):
         successful_creation = []
         failed_creation = []
         for column in new_columns:
@@ -371,7 +371,9 @@ class Sqlite3Interface(database_interface):
             failed_creation
         )
     
-    def getNode(self, node_ptr, use_dict_fact):
+    def get_node(self, node_ptr, use_dict_fact):
+        conn = None
+
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -387,10 +389,11 @@ class Sqlite3Interface(database_interface):
                 (node_ptr,)
             ).fetchone()
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
-    def insertNode(self, row_data: dict):
-        columns = self.getTableColumns('node')
+    def insert_node(self, row_data: dict):
+        columns = self.get_table_columns('node')
 
         pk = row_data.get('id')
         is_incrementing_pk = any(column['name'] == 'id' and column['type'] == ColumnType.Integer.value for column in columns)
@@ -447,7 +450,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def addConnection(self, from_ptr, to_ptr, throw_on_duplicate):
+    def add_connection(self, from_ptr, to_ptr, throw_on_duplicate):
         try:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
@@ -481,7 +484,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def getAllChildren(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+    def get_all_children(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -497,7 +500,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
     
-    def getAllParents(self, node_ptr, use_dict_fact = True):
+    def get_all_parents(self, node_ptr, use_dict_fact = True):
         try:
             conn = sqlite3.connect(self.database_file)
             if use_dict_fact:
@@ -513,7 +516,7 @@ class Sqlite3Interface(database_interface):
         finally:
             conn.close()
 
-    def paginateAllNodes(self, page_size, use_dict_fact):
+    def paginate_all_nodes(self, page_size, use_dict_fact):
         MAX_PAGE_SIZE = 10000
         MIN_PAGE_SIZE = 100
         page_size = min(MAX_PAGE_SIZE, page_size)

@@ -22,5 +22,5 @@ def test_prefix_tree(case):
 
             curr = next_node
     
-    for node in root_node.bfs():
+    for node in test_graph.bfsGenerator(root_node):
         pass

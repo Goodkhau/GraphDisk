@@ -21,13 +21,45 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def createTables(self):
+    def insert_session(self, session_id: str):
         pass
 
     @abstractmethod
-    def getTableColumns(self, name: str):
+    def create_tables(self):
         pass
 
     @abstractmethod
-    def createNodeColumns(self, new_columns: list[dict]):
+    def get_tables(self):
+        pass
+
+    @abstractmethod
+    def get_table_columns(self, name: str):
+        pass
+
+    @abstractmethod
+    def create_node_columns(self, new_columns: list[dict]):
+        pass
+
+    @abstractmethod
+    def get_node(self, node_ptr, use_dict_fact):
+        pass
+
+    @abstractmethod
+    def insert_node(self, row_data: dict):
+        pass
+
+    @abstractmethod
+    def add_connection(self, from_ptr, to_ptr, throw_on_duplicate):
+        pass
+
+    @abstractmethod
+    def get_all_children(self, node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+        pass
+
+    @abstractmethod
+    def get_all_parents(self, node_ptr, use_dict_fact = True):
+        pass
+
+    @abstractmethod
+    def paginate_all_nodes(self, page_size, use_dict_fact):
         pass

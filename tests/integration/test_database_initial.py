@@ -13,4 +13,4 @@ def test_table_creation(cleanUp):
 
     database: database_interface = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
 
-    assert set(database.getTables()) == set(expected_rows)
+    assert set(database.get_tables()) == set(expected_rows)

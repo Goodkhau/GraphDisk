@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from pathlib import Path
 
 from src.disk_graph.db.pysqlite3.interface import ColumnType, Sqlite3Interface as db
@@ -35,22 +36,23 @@ class Graph:
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
+        print("Path: ", self.graph_path)
         self.graph_path.mkdir(parents=True, exist_ok=True)
         try:
             self.db: database_interface = db(name, graphs_folder=graphs_folder, node_pk_type=node_pk_type)
         except Exception as Error:
             logger.critical("Failed to create required tables")
-            raise Exception("Failed essential graph creation dependency") from Error
+            raise Exception(f"Failed essential graph creation dependency. Error: {Error}")
         else:
             self.updateTables()
     
     def updateTables(self):
-        existing_columns = self.db.getTableColumns('node')
+        existing_columns = self.db.get_table_columns('node')
         existing_config = self.readConfigFile()
 
         new_columns, updated_config = calculateRowCreation(existing_columns, existing_config)
 
-        success_cols, failed_cols = self.db.createNodeColumns(new_columns)
+        success_cols, failed_cols = self.db.create_node_columns(new_columns)
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
 
@@ -96,30 +98,30 @@ class Graph:
             raise Exception("Unexpected Error")
     
     def createNode(self, row_data: dict = {}) -> Node:
-        node_ptr_id = self.db.insertNode(row_data)
+        node_ptr_id = self.db.insert_node(row_data)
         return Node(node_ptr_id, self.db)
 
     def getNode(self, pk) -> Node:
-        row = self.db.getNode(pk)
+        row = self.db.get_node(pk)
         return None if row == None else Node(row.get("id"), self.db)
     
     def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> Generator[list[dict | tuple]]:
-        return self.db.paginateAllNodes(page_size, use_dict_fact)
+        return self.db.paginate_all_nodes(page_size, use_dict_fact)
     
-    def bfsGenerator(self, node: Node):
+    def bfsGenerator(self, root: Node):
         session_id = str(uuid.uuid4())
-        deque = self.db.Deque(session_id)
-        visited = self.db.Visited(session_id)
+        deque = self.db.createDeque(session_id)
+        visited = self.db.createCollection(session_id)
 
-        deque.push_back(node.node_ptr)
+        deque.push_back(root.node_ptr)
         while not deque.empty():
             front = deque.pop_front()
 
-            if visted.has(front):
+            if visited.has(front):
                 continue
             visited.add(front)
 
-            children = self.getAllChildren(front)
+            children = front.children()
             for child in children:
                 if visited.has(child):
                     continue

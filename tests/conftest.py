@@ -3,14 +3,21 @@ import pytest
 import json
 import shutil
 
+GRAPHS_FOLDER = Path(__file__).parent / 'graphs'
+
+def _clean_graphs(config):
+    if not hasattr(config, "workerinput"):  # controller / non-xdist only
+        shutil.rmtree(GRAPHS_FOLDER, ignore_errors=True)
+
+def pytest_sessionstart(session):
+    _clean_graphs(session.config)
+
+def pytest_sessionfinish(session, exitstatus):
+    _clean_graphs(session.config)
+
 @pytest.fixture(scope="session")
 def cleanUp():
-    graphs_folder = Path(__file__).parent / 'graphs'
-
-    yield graphs_folder
-
-    shutil.rmtree(graphs_folder)
-    graphs_folder.mkdir(parents=True, exist_ok=True)
+    yield GRAPHS_FOLDER
 
 @pytest.fixture
 def case(request):
