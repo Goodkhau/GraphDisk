@@ -1,7 +1,6 @@
 import pytest
 from pathlib import Path
 
-from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
 from src.disk_graph import Graph
 
 @pytest.mark.pysqlite3_integration

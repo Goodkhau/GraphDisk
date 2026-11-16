@@ -9,7 +9,7 @@ expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'col
 @pytest.mark.pysqlite3_integration
 def test_table_creation(cleanUp):
     graphs_folder = cleanUp
-    name = "table_creation"
+    name = metadata['scenario']
 
     database: database_interface = Sqlite3Interface(name, graphs_folder, ColumnType.Integer)
 

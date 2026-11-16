@@ -3,9 +3,9 @@ import pytest
 from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
 
 @pytest.mark.pysqlite3_integration
-def test_collection_class(cleanUp):
+def test_collection_class(metadata, cleanUp):
     graphs_folder = cleanUp
-    name = "collection"
+    name = metadata['scenario']
 
     collection = Sqlite3Interface(name, graphs_folder, ColumnType.Integer).createCollection()
 

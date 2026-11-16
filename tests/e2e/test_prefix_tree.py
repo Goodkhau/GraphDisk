@@ -4,8 +4,9 @@ from disk_graph import Graph, ColumnType
 @pytest.mark.e2e
 def test_prefix_tree(case):
     data, output = case
+    name = metadata['scenario']
 
-    test_graph = Graph("Test", node_pk_type=ColumnType.String).updateConfigFile({
+    test_graph = Graph(name, node_pk_type=ColumnType.String).updateConfigFile({
         "layer": ColumnType.Integer.name
     })
 
