@@ -7,6 +7,7 @@ from src.disk_graph.db.pysqlite3.interface import ColumnType, Sqlite3Interface a
 from src.disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
 from src.disk_graph.Deque import Deque
+from src.disk_graph.Collection import Collection
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

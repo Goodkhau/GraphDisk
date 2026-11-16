@@ -1,7 +1,9 @@
+import uuid
+
 from src.disk_graph.Node import Node
 
 class Deque:
-    def __init__(self, db: database_interface, session_id):
+    def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
         self.session_id = session_id
         self.db = db
     

@@ -52,8 +52,8 @@ class Sqlite3Interface(database_interface):
         self.create_tables(node_pk_type=node_pk_type)
  
     def insert_session(self, session_id: str):
-        with closing(sqlite3.connect(self.database_file)) as conn, conn:
-            cursor = conn.cursor()
+        with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
+            cursor = transaction.cursor()
             cursor.execute(
                 f"""
                     INSERT OR IGNORE INTO session
@@ -61,46 +61,8 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id, datetime.now(),)
             )
+
         return session_id
-    
-    def createCollection(self, session_id = str(uuid.uuid4())):
-        self.insert_session(session_id)
-        return self.Collection(self, session_id)
- 
-    class Collection:
-        def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
-            self.session_id = session_id
-            self.db = db
-            self.db.insert_session(self.session_id)
-        
-        def has(self, node_ptr_id):
-            with closing(sqlite3.connect(self.db.database_file)) as conn:
-                coll_row = conn.execute(
-                    f"""
-                        SELECT *
-                        FROM collection
-                        WHERE {Collection.NodePtr.value} = ?
-                            AND {Collection.Session.value} = ?
-                    """,
-                    (node_ptr_id, self.session_id,)
-                ).fetchone()
- 
-                return coll_row is not None
-        
-        def add(self, node_ptr_id):
-            with closing(sqlite3.connect(self.db.database_file)) as conn, conn:
-                if self.has(node_ptr_id):
-                    return self
- 
-                conn.execute(
-                    f"""
-                        INSERT OR IGNORE INTO collection
-                            ({Collection.NodePtr.value},{Collection.Session.value})
-                        VALUES (?,?)
-                    """,
-                    (node_ptr_id, self.session_id,)
-                )
-            return self
  
     def create_tables(self, node_pk_type: ColumnType):
         with closing(sqlite3.connect(self.database_file)) as conn:
@@ -214,8 +176,8 @@ class Sqlite3Interface(database_interface):
  
         placeholder, insert_data = calculateRowInsertion(columns, row_data)
  
-        with closing(sqlite3.connect(self.database_file)) as conn, conn:
-            cursor = conn.cursor()
+        with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
+            cursor = transaction.cursor()
  
             existing_node_ptr = cursor.execute(
                 f"""
@@ -250,8 +212,8 @@ class Sqlite3Interface(database_interface):
         return cursor.lastrowid
     
     def insert_edge(self, from_ptr, to_ptr, throw_on_duplicate):
-        with closing(sqlite3.connect(self.database_file)) as conn, conn:
-            cursor = conn.cursor()
+        with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
+            cursor = transaction.cursor()
  
             existing_connection = cursor.execute(
                 f"""
@@ -367,8 +329,8 @@ class Sqlite3Interface(database_interface):
             ).fetchone()
     
     def delete_deque(self, position: int, session_id: str) -> tuple(int, int, int, str):
-        with closing(sqlite3.connect(self.database_file)) as conn, conn:
-            cursor = conn.cursor()
+        with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
+            cursor = transaction.cursor()
             deleted_rows = cursor.execute(
                 f"""
                     DELETE FROM deque
@@ -390,3 +352,30 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id,)
             ).fetchone()[0]
+    
+    def insert_collection(self, node_ptr: int, session_id: str):
+        with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
+            transaction.execute(
+                f"""
+                    INSERT OR IGNORE INTO collection
+                        ({Collection.NodePtr.value},{Collection.Session.value})
+                    VALUES (?,?)
+                """,
+                (node_ptr, session_id,)
+            )
+        
+        return node_ptr
+    
+    def select_collection(self, node_ptr: int, session_id: str):
+        with closing(sqlite3.connect(self.database_file)) as conn:
+            collection_row = conn.execute(
+                f"""
+                    SELECT *
+                    FROM collection
+                    WHERE {Collection.NodePtr.value} = ?
+                        AND {Collection.Session.value} = ?
+                """,
+                (node_ptr, session_id,)
+            ).fetchone()
+
+        return collection_row
