@@ -63,3 +63,23 @@ class database_interface(ABC):
     @abstractmethod
     def paginate_all_nodes(self, page_size, use_dict_fact):
         pass
+    
+    @abstractmethod
+    def insert_deque(self, position: int, node_ptr: int, session_id: str):
+        pass
+
+    @abstractmethod
+    def select_deque_highest(self, session_id: str) -> tuple(int, int, int, str):
+        pass
+
+    @abstractmethod
+    def select_deque_lowest(self, session_id: str) -> tuple(int, int, int, str):
+        pass
+
+    @abstractmethod
+    def delete_deque(self, position: int, session_id: str) -> tuple(int, int, int, str):
+        pass
+
+    @abstractmethod
+    def count_deque(self, session_id: str):
+        pass

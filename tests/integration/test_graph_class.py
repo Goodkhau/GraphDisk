@@ -34,6 +34,7 @@ def test_graph_creation(cleanUp, metadata, Config):
     assert new_config.get('message') != None, "message should be attached to new config file"
     assert new_config == default_config | configs, "new config should match original config"
 
+## Fix
 @pytest.mark.integration
 def test_graph_invalid_config(cleanUp, metadata, Config):
     graphs_folder = cleanUp

@@ -2,43 +2,50 @@ import pytest
 from pathlib import Path
 
 from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
+from src.disk_graph import Graph
 
 @pytest.mark.pysqlite3_integration
-def test_deque_push_back(cleanUp):
+def test_deque_push_back(metadata, cleanUp):
     graphs_folder = cleanUp
-    name = "deque_push_back"
+    name = metadata['scenario']
 
-    node_ptr_1 = 1
-    node_ptr_2 = 2
+    graph = Graph(name, graphs_folder=graphs_folder)
 
-    deque = Sqlite3Interface(name, graphs_folder, ColumnType.Integer).createDeque()
+    deque = graph.createDeque()
+
+    node_one = graph.createNode()
+    node_two = graph.createNode()
 
     assert deque.empty() == True, "deque should initially be empty"
     assert deque.front() == None, "front position should be none"
     assert deque.back() == None, "back position should be none"
 
-    deque.push_back(node_ptr_1)
+    deque.push_back(node_one)
     assert deque.empty() == False, "deque should not be empty"
-    assert deque.front() == node_ptr_1, "front position should be 1"
+    assert deque.front() == node_one, "front position should be 1"
     assert deque.back() == deque.front(), "back position should also be 1"
 
-    deque.push_back(node_ptr_2)
+    deque.push_back(node_two)
     assert deque.empty() == False, "deque should not be empty"
-    assert deque.front() == node_ptr_1, "front position should be 1"
-    assert deque.back() == node_ptr_2, "back position should also be 2"
+    assert deque.front() == node_one, "front position should be 1"
+    assert deque.back() == node_two, "back position should also be 2"
 
 @pytest.mark.pysqlite3_integration
-def test_deque_pop_front(cleanUp):
+def test_deque_pop_front(metadata, cleanUp):
     graphs_folder = cleanUp
-    name = "deque_pop_front"
+    name = metadata['scenario']
 
     node_ptr_1 = 1
     node_ptr_2 = 2
 
-    deque = Sqlite3Interface(name, graphs_folder, ColumnType.Integer).createDeque()
+    graph = Graph(name, graphs_folder=graphs_folder)
+    deque = graph.createDeque()
 
-    deque.push_back(node_ptr_1)
-    deque.push_back(node_ptr_2)
+    node_one = graph.createNode()
+    node_two = graph.createNode()
+
+    deque.push_back(node_one)
+    deque.push_back(node_two)
 
     assert deque.front() == deque.pop_front(), "popped value should be from the front"
     assert deque.front() == deque.pop_front(), "popped value should be from the front"

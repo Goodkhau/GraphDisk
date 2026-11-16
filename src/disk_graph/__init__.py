@@ -6,6 +6,7 @@ from pathlib import Path
 from src.disk_graph.db.pysqlite3.interface import ColumnType, Sqlite3Interface as db
 from src.disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
+from src.disk_graph.Deque import Deque
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,7 +37,6 @@ class Graph:
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.config_path = Path.joinpath(self.graph_path, "config.json")
 
-        print("Path: ", self.graph_path)
         self.graph_path.mkdir(parents=True, exist_ok=True)
         try:
             self.db: database_interface = db(name, graphs_folder=graphs_folder, node_pk_type=node_pk_type)
@@ -108,10 +108,16 @@ class Graph:
     def getAllNodeValuesByPage(self, page_size = 1000, use_dict_fact = True) -> Generator[list[dict | tuple]]:
         return self.db.paginate_all_nodes(page_size, use_dict_fact)
     
+    def createDeque(self, session_id: str = str(uuid.uuid4())) -> Deque:
+        return Deque(self.db, session_id)
+    
+    def createCollection(self, session_id: str = str(uuid.uuid4())) -> Collection:
+        return Collection(self.db, session_id)
+    
     def bfsGenerator(self, root: Node):
         session_id = str(uuid.uuid4())
-        deque = self.db.createDeque(session_id)
-        visited = self.db.createCollection(session_id)
+        deque = self.createDeque(session_id)
+        visited = self.createCollection(session_id)
 
         deque.push_back(root.node_ptr)
         while not deque.empty():

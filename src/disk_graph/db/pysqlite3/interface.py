@@ -1,34 +1,30 @@
 import sqlite3
-import logging
 import uuid
 from pathlib import Path
 from typing import Literal
 from enum import Enum
 from contextlib import closing
 from datetime import datetime
-
+ 
 from src.disk_graph.db.database_interface import database_interface, Edges, NodePtr
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+ 
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
-
+ 
 def calculateRowInsertion(columns: list[dict], row_data: dict) -> tuple(str, list):
     insert_data = [row_data.get(column['name']) for column in columns]
-
+ 
     return (
         "(" + ",".join("?" * len(columns)) + ")",
         insert_data
     )
-
+ 
 class ColumnType(str, Enum):
     Integer   = "INTEGER"
     Float     = "REAL"
     String    = "TEXT"
     Bytes     = "BLOB"
-
+ 
     # This function overrides enum indexing failure. Makes indexing this enum soft casing.
     @classmethod
     def _missing_(cls, value):
@@ -37,27 +33,26 @@ class ColumnType(str, Enum):
                 if member.value.lower() == value.lower():
                     return member
         return super()._missing_(value)
-
+ 
 class Collection(str, Enum):
     NodePtr = "node_ptr_id"
     Session = "session_id"
-
+ 
 class Deque(str, Enum):
     Position    = "position"
     NodePtr     = "node_ptr"
     Session     = "session_id"
-
+ 
 class Sqlite3Interface(database_interface):
     def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
         self.graph_path = Path.joinpath(graphs_folder, name)
         self.graph_path.mkdir(parents=True, exist_ok=True)
-
+ 
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
         self.create_tables(node_pk_type=node_pk_type)
-
+ 
     def insert_session(self, session_id: str):
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn, conn:
             cursor = conn.cursor()
             cursor.execute(
                 f"""
@@ -66,15 +61,7 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id, datetime.now(),)
             )
-        except:
-            conn.rollback()
-            logger.error()
-            raise Exception(f"Failed to insert session id: {session_id}")
-        else:
-            conn.commit()
-            return session_id
-        finally:
-            conn.close()
+        return session_id
     
     def createDeque(self, session_id = str(uuid.uuid4())):
         self.insert_session(session_id)
@@ -83,15 +70,14 @@ class Sqlite3Interface(database_interface):
     def createCollection(self, session_id = str(uuid.uuid4())):
         self.insert_session(session_id)
         return self.Collection(self, session_id)
-
+ 
     class Deque:
         def __init__(self, db: database_interface, session_id):
             self.session_id = session_id
             self.db = db
         
         def empty(self):
-            try:
-                conn = sqlite3.connect(self.db.database_file)
+            with closing(sqlite3.connect(self.db.database_file)) as conn:
                 return conn.execute(
                     f"""
                         SELECT COUNT(*)
@@ -100,43 +86,31 @@ class Sqlite3Interface(database_interface):
                     """,
                     (self.session_id,)
                 ).fetchone()[0] == 0
-            finally:
-                conn.close()
-
+ 
         def push_front(self, node_ptr_id):
             pass
-
+ 
         def push_back(self, node_ptr_id):
-            try:
-                min_pos = self.front(field=Deque.Position.value)
-
-                conn = sqlite3.connect(self.db.database_file)
+            min_pos = self.front(field=Deque.Position.value)
+ 
+            with closing(sqlite3.connect(self.db.database_file)) as conn, conn:
                 cursor = conn.cursor()
-
+ 
                 if min_pos is None:
                     min_pos = 0
-
+ 
                 cursor.execute(
                     f"""
                         INSERT INTO deque
+                            ({Deque.Position.value},{Deque.NodePtr.value},{Deque.Session.value})
                         VALUES (?,?,?)
                     """,
                     (min_pos-1, node_ptr_id, self.session_id,)
                 )
-            except Exception as Error:
-                conn.rollback()
-                logger.error()
-                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos}, nodeptr: {node_ptr_id}, session: {self.session_id}")
-            else:
-                conn.commit()
-                return node_ptr_id
-            finally:
-                conn.close()
-
+            return node_ptr_id
+ 
         def front(self, field = Deque.NodePtr.value) -> int | None:
-            try:
-                conn = sqlite3.connect(self.db.database_file)
-            
+            with closing(sqlite3.connect(self.db.database_file)) as conn:
                 min_pos = conn.execute(
                     f"""
                         SELECT {field}
@@ -147,19 +121,11 @@ class Sqlite3Interface(database_interface):
                     """,
                     (self.session_id,)
                 ).fetchone()
-
+ 
                 return None if min_pos is None else min_pos[0]
-            except Exception as Error:
-                conn.rollback()
-                logger.error()
-                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos[0]}, nodeptr: {node_ptr_id}, session: {self.session_id}")
-            finally:
-                conn.close()
-
+ 
         def back(self):
-            try:
-                conn = sqlite3.connect(self.db.database_file)
-            
+            with closing(sqlite3.connect(self.db.database_file)) as conn:
                 min_pos = conn.execute(
                     f"""
                         SELECT {Deque.NodePtr.value}
@@ -170,27 +136,18 @@ class Sqlite3Interface(database_interface):
                     """,
                     (self.session_id,)
                 ).fetchone()
-
+ 
                 return None if min_pos is None else min_pos[0]
-            except Exception as Error:
-                conn.rollback()
-                logger.error()
-                raise Exception(f"Unexpected Error, failed to enque positon: {min_pos[0]}, nodeptr: {node_ptr_id}, session: {self.session_id}")
-            finally:
-                conn.close()
-
+ 
         def pop_front(self):
-            conn = None
-
-            try:
-                min_pos = self.front(field=Deque.Position.value)
-
-                if min_pos is None:
-                    return None
-
-                conn = sqlite3.connect(self.db.database_file)
+            min_pos = self.front(field=Deque.Position.value)
+ 
+            if min_pos is None:
+                return None
+ 
+            with closing(sqlite3.connect(self.db.database_file)) as conn, conn:
                 cursor = conn.cursor()
-
+ 
                 deleted_rows = cursor.execute(
                     f"""
                         DELETE FROM deque
@@ -199,20 +156,11 @@ class Sqlite3Interface(database_interface):
                     """,
                     (min_pos,)
                 ).fetchall()
-            except Exception as Error:
-                conn.rollback()
-                logger.error()
-                raise Exception(f"Unexpected Error, failed to delete positon: {min_pos}. Error: {Error}")
-            else:
-                conn.commit()
-                return deleted_rows[0][1]
-            finally:
-                if conn:
-                    conn.close()
-
+            return deleted_rows[0][2]
+ 
         def pop_back(self):
             pass
-
+ 
     class Collection:
         def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
             self.session_id = session_id
@@ -220,8 +168,7 @@ class Sqlite3Interface(database_interface):
             self.db.insert_session(self.session_id)
         
         def has(self, node_ptr_id):
-            try:
-                conn = sqlite3.connect(self.db.database_file)
+            with closing(sqlite3.connect(self.db.database_file)) as conn:
                 coll_row = conn.execute(
                     f"""
                         SELECT *
@@ -231,50 +178,32 @@ class Sqlite3Interface(database_interface):
                     """,
                     (node_ptr_id, self.session_id,)
                 ).fetchone()
-
+ 
                 return coll_row is not None
-            except Exception:
-                logger.error("Failed to check if database has ptr")
-                raise Exception(f"Unexpected error, failed to check if collection has ptr: {node_ptr_id} on session {self.session_id}")
-            finally:
-                if conn:
-                    conn.close()
         
         def add(self, node_ptr_id):
-            conn = None
-
-            try:
+            with closing(sqlite3.connect(self.db.database_file)) as conn, conn:
                 if self.has(node_ptr_id):
                     return self
-
-                conn = sqlite3.connect(self.db.database_file)
+ 
                 conn.execute(
                     f"""
                         INSERT OR IGNORE INTO collection
-                        ({Collection.NodePtr.value},{Collection.Session.value})
+                            ({Collection.NodePtr.value},{Collection.Session.value})
                         VALUES (?,?)
                     """,
                     (node_ptr_id, self.session_id,)
                 )
-            except Exception as Error:
-                logger.error("Failed to add node_ptr")
-                raise Exception(f"Unexpected error, failed to check if collection 'has' {node_ptr_id} on session {self.session_id}. Error: {Error}")
-            else:
-                conn.commit()
-                return self
-            finally:
-                if conn:
-                    conn.close()
-
+            return self
+ 
     def create_tables(self, node_pk_type: ColumnType):
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn:
             conn.executescript(f"""
                 PRAGMA foreign_keys = ON;
                 CREATE TABLE IF NOT EXISTS node (
                     id {ColumnType[node_pk_type.name].value} PRIMARY KEY
                 ) STRICT;
-
+ 
                 CREATE TABLE IF NOT EXISTS node_ptr (
                     id                          INTEGER PRIMARY KEY AUTOINCREMENT,
                     {NodePtr.Node.value}        INTEGER NOT NULL REFERENCES node(id),
@@ -282,7 +211,7 @@ class Sqlite3Interface(database_interface):
                     {NodePtr.OutDegree.value}   INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS idx_node_ptr_node ON node_ptr(node);
-
+ 
                 CREATE TABLE IF NOT EXISTS edges (
                     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
                     {Edges.From.value}  INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
@@ -290,31 +219,29 @@ class Sqlite3Interface(database_interface):
                 );
                 CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges({Edges.From.value});
                 CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges({Edges.To.value});
-
+ 
                 CREATE TABLE IF NOT EXISTS session (
                     id          TEXT PRIMARY KEY,
                     create_date INTEGER
                 );
-
+ 
                 CREATE TABLE IF NOT EXISTS collection (
-                    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
-                    {Collection.NodePtr.value}     INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    {Collection.Session.value}     TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
+                    id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {Collection.NodePtr.value}  INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Collection.Session.value}  TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
                 );
                 CREATE INDEX IF NOT EXISTS idx_collection_nodeptrid_session ON collection({Collection.NodePtr.value},{Collection.Session.value});
-
+ 
                 CREATE TABLE IF NOT EXISTS deque (
-                    {Deque.Position.value}   INTEGER PRIMARY KEY,
-                    {Deque.NodePtr.value}    INTEGER REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    {Deque.Session.value}    TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
+                    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {Deque.Position.value}  INTEGER NOT NULL,
+                    {Deque.NodePtr.value}   INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    {Deque.Session.value}   TEXT NOT NULL REFERENCES session(id) ON DELETE CASCADE
                 );
             """)
-        finally:
-            conn.close()
-
+ 
     def select_tables(self):
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn:
             tables = conn.execute(
                 """
                     SELECT name
@@ -323,59 +250,35 @@ class Sqlite3Interface(database_interface):
                         AND name NOT LIKE 'sqlite.%';
                 """
             ).fetchall()
-
+ 
             return [table[0] for table in tables]
-        finally:
-            conn.close()
-
+ 
     def select_table_columns(self, name: str):
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn:
             conn.row_factory = dict_factory
             return conn.execute(f"SELECT * FROM pragma_table_info('{name}');").fetchall()
-        except Exception:
-            logger.exception(f"Failed to get column info for {name}.")
-            return []
-        finally:
-            conn.close()
-
+ 
     def alter_node_columns(self, new_columns: list[dict]):
         successful_creation = []
         failed_creation = []
         for column in new_columns:
             if column['name'] == 'id':
                 continue
-
-            try:
-                conn = sqlite3.connect(self.database_file)
+ 
+            with closing(sqlite3.connect(self.database_file)) as conn:
                 conn.execute(f"""
                     ALTER TABLE node
                     ADD COLUMN {column['name']} {ColumnType[column['type']].value};
                 """)
-            except (ValueError, KeyError):
-                logger.exception(
-                    f"Failed to create column {column['name']} because of invalid column type: " + 
-                    f"{column['type']}. Expecting one of {[enum.name for enum in ColumnType]}."
-                )
-                failed_creation.append(column['name'])
-            except Exception:
-                logger.exception(f"Failed to create column {column['name']} with type {column['type']}:")
-                failed_creation.append(column['name'])
-            else:
-                successful_creation.append(column['name'])
-            finally:
-                conn.close()
-
+            successful_creation.append(column['name'])
+ 
         return (
             successful_creation,
             failed_creation
         )
     
     def select_node(self, node_ptr, use_dict_fact):
-        conn = None
-
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn:
             if use_dict_fact:
                 conn.row_factory = dict_factory
             return conn.execute(
@@ -388,26 +291,22 @@ class Sqlite3Interface(database_interface):
                 """,
                 (node_ptr,)
             ).fetchone()
-        finally:
-            if conn:
-                conn.close()
-
+ 
     def insert_node(self, row_data: dict):
         columns = self.select_table_columns('node')
-
+ 
         pk = row_data.get('id')
         is_incrementing_pk = any(column['name'] == 'id' and column['type'] == ColumnType.Integer.value for column in columns)
         if pk == None and not is_incrementing_pk:
             raise Exception(
                 f"id needs to be defined for non-incrementing row."
             )
-
+ 
         placeholder, insert_data = calculateRowInsertion(columns, row_data)
-
-        try:
-            conn = sqlite3.connect(self.database_file)
+ 
+        with closing(sqlite3.connect(self.database_file)) as conn, conn:
             cursor = conn.cursor()
-
+ 
             existing_node_ptr = cursor.execute(
                 f"""
                     SELECT ptr.id
@@ -418,10 +317,10 @@ class Sqlite3Interface(database_interface):
                 """,
                 (pk,)
             ).fetchone()
-
+ 
             if existing_node_ptr:
                 return existing_node_ptr[0]
-
+ 
             cursor.execute(
                 f"""
                     INSERT INTO node 
@@ -429,7 +328,7 @@ class Sqlite3Interface(database_interface):
                 """,
                 insert_data
             )
-
+ 
             pk = pk if pk != None else cursor.lastrowid
             cursor.execute(
                 f"""
@@ -438,23 +337,12 @@ class Sqlite3Interface(database_interface):
                 """,
                 (pk,)
             )
-        except sqlite3.Error as Error:
-            conn.rollback()
-            raise sqlite3.Error(f"Sqlite3Interface: Failed to insert column {row_data} and primary key {pk} {Error}")
-        except Exception as Error:
-            conn.rollback()
-            raise Exception(f"Sqlite3Interface: Unexpected error {Error}")
-        else:
-            conn.commit()
-            return cursor.lastrowid
-        finally:
-            conn.close()
+        return cursor.lastrowid
     
     def insert_edge(self, from_ptr, to_ptr, throw_on_duplicate):
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn, conn:
             cursor = conn.cursor()
-
+ 
             existing_connection = cursor.execute(
                 f"""
                     SELECT id
@@ -464,10 +352,10 @@ class Sqlite3Interface(database_interface):
                 """,
                 (from_ptr, to_ptr,)
             ).fetchone()
-
+ 
             if existing_connection:
                 return
-
+ 
             cursor.execute(
                 f"""
                     INSERT INTO edges
@@ -476,17 +364,10 @@ class Sqlite3Interface(database_interface):
                 """,
                 (from_ptr, to_ptr,)
             )
-        except Exception as Error:
-            raise Exception(f"Sqlite3Interface: Unexpected error adding connection from: {from_ptr}, to: {to_ptr} {Error}")
-        else:
-            conn.commit()
-            return cursor.lastrowid
-        finally:
-            conn.close()
+        return cursor.lastrowid
     
     def select_edge_to_ptr(self, from_node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn:
             if use_dict_fact:
                 conn.row_factory = dict_factory
             return conn.execute(
@@ -497,12 +378,9 @@ class Sqlite3Interface(database_interface):
                 """,
                 (from_node_ptr,)
             ).fetchall()
-        finally:
-            conn.close()
     
     def select_edge_from_ptr(self, to_node_ptr, use_dict_fact = True):
-        try:
-            conn = sqlite3.connect(self.database_file)
+        with closing(sqlite3.connect(self.database_file)) as conn:
             if use_dict_fact:
                 conn.row_factory = dict_factory
             return conn.execute(
@@ -513,34 +391,92 @@ class Sqlite3Interface(database_interface):
                 """,
                 (to_node_ptr,)
             ).fetchall()
-        finally:
-            conn.close()
-
+ 
     def paginate_all_nodes(self, page_size, use_dict_fact):
         MAX_PAGE_SIZE = 10000
         MIN_PAGE_SIZE = 100
         page_size = min(MAX_PAGE_SIZE, page_size)
         page_size = max(MIN_PAGE_SIZE, page_size)
-
+ 
         last = False
         while True:
-            try:
-                conn = sqlite3.connect(self.database_file)
+            with closing(sqlite3.connect(self.database_file)) as conn:
                 if use_dict_fact:
                     conn.row_factory = dict_factory
-
+ 
                 rows = conn.execute(
                     "SELECT * FROM node WHERE id > ? ORDER BY id LIMIT ?" if last else "select * FROM node ORDER BY id LIMIT ?",
                     (last, page_size,) if last else (page_size,)
                 ).fetchall()
-            except:
-                logger.exception(f"Failed to get row for page size {page_size} and last {last}")
-                return []
-            else:
+ 
                 if not rows:
                     return
-
+ 
                 yield rows
                 last = rows[-1].get('id') if use_dict_fact else rows[-1][0]
-            finally:
-                conn.close()
+    
+    def insert_deque(self, position: int, node_ptr: int, session_id: str):
+        with sqlite3.connect(self.database_file) as conn:
+            conn = sqlite3.connect(self.database_file)
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                    INSERT INTO deque
+                        ({Deque.Position.value},{Deque.NodePtr.value},{Deque.Session.value})
+                    VALUES (?,?,?)
+                """,
+                (position, node_ptr, session_id,)
+            )
+            conn.commit()
+            return node_ptr
+    
+    def select_deque_highest(self, session_id: str) -> tuple(int, int, int, str):
+        with closing(sqlite3.connect(self.database_file)) as conn:
+            return conn.execute(
+                f"""
+                    SELECT *
+                    FROM deque
+                    WHERE {Deque.Session.value} = ?
+                    ORDER BY {Deque.Position.value} DESC
+                    LIMIT 1
+                """,
+                (session_id,)
+            ).fetchone()
+    
+    def select_deque_lowest(self, session_id: str) -> tuple(int, int, int, str):
+        with closing(sqlite3.connect(self.database_file)) as conn:
+            return conn.execute(
+                f"""
+                    SELECT *
+                    FROM deque
+                    WHERE {Deque.Session.value} = ?
+                    ORDER BY {Deque.Position.value} ASC
+                    LIMIT 1
+                """,
+                (session_id,)
+            ).fetchone()
+    
+    def delete_deque(self, position: int, session_id: str) -> tuple(int, int, int, str):
+        with closing(sqlite3.connect(self.database_file)) as conn, conn:
+            cursor = conn.cursor()
+            deleted_rows = cursor.execute(
+                f"""
+                    DELETE FROM deque
+                    WHERE {Deque.Session.value} = ?
+                        AND {Deque.Position.value} = ?
+                    RETURNING *
+                """,
+                (session_id,position,)
+            ).fetchall()
+        return deleted_rows[0]
+ 
+    def count_deque(self, session_id: str):
+        with closing(sqlite3.connect(self.database_file)) as conn:
+            return conn.execute(
+                f"""
+                    SELECT COUNT(*)
+                    FROM deque
+                    WHERE {Deque.Session.value} = ?
+                """,
+                (session_id,)
+            ).fetchone()[0]

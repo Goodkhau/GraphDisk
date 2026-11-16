@@ -71,17 +71,15 @@ def test_integer_invalid_pk(cleanUp, metadata, Config):
     invalid_pk_byte = bytes([random.randint(0, 255) for _ in range(6)])
     valid_pk = "117"
 
-    with pytest.raises(sqlite3.Error) as invalid_error_str:
+    with pytest.raises(sqlite3.IntegrityError) as invalid_error_str:
         graph.createNode({ "id": invalid_pk_str })
     
-    assert invalid_error_str.type is sqlite3.Error
-    assert "Sqlite3Interface: Failed to insert column" in str(invalid_error_str.value), "exception should have message attached"
+    assert invalid_error_str.type is sqlite3.IntegrityError
 
-    with pytest.raises(sqlite3.Error) as invalid_pk_byte:
+    with pytest.raises(sqlite3.IntegrityError) as invalid_pk_byte:
         graph.createNode({ "id": invalid_pk_str })
     
-    assert invalid_pk_byte.type is sqlite3.Error
-    assert "Sqlite3Interface: Failed to insert column" in str(invalid_pk_byte.value), "exception should have message attached"
+    assert invalid_pk_byte.type is sqlite3.IntegrityError
 
     node = graph.createNode({ "id": valid_pk }).value()
     assert isinstance(node.get('id'), int), "string number should convert to number"
@@ -145,11 +143,10 @@ def test_string_invalid_pk(cleanUp, metadata, Config):
     invalid_pk = bytes([random.randint(0, 255) for _ in range(6)])
     valid_pk = 23
 
-    with pytest.raises(sqlite3.Error) as invalid_error:
+    with pytest.raises(sqlite3.IntegrityError) as invalid_error:
         graph.createNode({ "id": invalid_pk })
     
-    assert invalid_error.type is sqlite3.Error
-    assert "Sqlite3Interface: Failed to insert column" in str(invalid_error.value), "exception should have message attached"
+    assert invalid_error.type is sqlite3.IntegrityError
 
     node = graph.createNode({ "id": valid_pk }).value()
     assert isinstance(node.get('id'), str), "string number should convert to string"
