@@ -261,16 +261,20 @@ class Sqlite3Interface(database_interface):
     def alter_node_columns(self, new_columns: list[dict]):
         successful_creation = []
         failed_creation = []
-        for column in new_columns:
-            if column['name'] == 'id':
-                continue
- 
-            with closing(sqlite3.connect(self.database_file)) as conn:
-                conn.execute(f"""
-                    ALTER TABLE node
-                    ADD COLUMN {column['name']} {ColumnType[column['type']].value};
-                """)
-            successful_creation.append(column['name'])
+        with closing(sqlite3.connect(self.database_file)) as conn:
+            for column in new_columns:
+                if column['name'] == 'id':
+                    continue
+
+                try:
+                    conn.execute(f"""
+                        ALTER TABLE node
+                        ADD COLUMN {column['name']} {ColumnType[column['type']].value};
+                    """)
+                except:
+                    failed_creation.append(column['name'])
+                else:
+                    successful_creation.append(column['name'])
  
         return (
             successful_creation,
