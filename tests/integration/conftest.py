@@ -17,11 +17,5 @@ class ConfigClass:
             return None
 
 @pytest.fixture
-def metadata(request):
-    return {
-        "scenario": request.node.name
-    }
-
-@pytest.fixture
 def Config(request):
     return ConfigClass()

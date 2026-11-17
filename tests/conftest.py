@@ -24,6 +24,12 @@ def case(request):
     test_file = Path(request.module.__file__)
     return get_data(test_file=test_file, scenario=request.node.name)
 
+@pytest.fixture
+def metadata(request):
+    return {
+        "scenario": request.node.name
+    }
+
 def get_data(test_file: Path, scenario: str):
     path = test_file.parent / "data" / test_file.name / scenario
     input_data = path / "input.json"

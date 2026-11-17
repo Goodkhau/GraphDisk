@@ -57,9 +57,9 @@ class Sqlite3Interface(database_interface):
             cursor.execute(
                 f"""
                     INSERT OR IGNORE INTO session
-                    VALUES (?,?)
+                    VALUES (?)
                 """,
-                (session_id, datetime.now(),)
+                (session_id,)
             )
 
         return session_id
@@ -89,8 +89,7 @@ class Sqlite3Interface(database_interface):
                 CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges({Edges.To.value});
  
                 CREATE TABLE IF NOT EXISTS session (
-                    id          TEXT PRIMARY KEY,
-                    create_date INTEGER
+                    id TEXT PRIMARY KEY
                 );
  
                 CREATE TABLE IF NOT EXISTS collection (

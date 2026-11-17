@@ -120,15 +120,16 @@ class Graph:
         deque = self.createDeque(session_id)
         visited = self.createCollection(session_id)
 
-        deque.push_back(root.node_ptr)
+        deque.push_back(root)
         while not deque.empty():
-            front = deque.pop_front()
+            front = deque.pop_back()
 
             if visited.has(front):
                 continue
             visited.add(front)
 
             children = front.children()
+            print("Children:", [child.value() for child in children])
             for child in children:
                 if visited.has(child):
                     continue
