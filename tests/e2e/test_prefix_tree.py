@@ -11,7 +11,9 @@ def test_prefix_tree(case, metadata, default_teardown):
         "layer": ColumnType.Integer.name
     })
 
-    root_node = test_graph.createNode({"id": "root"})
+    test_graph.updateTables()
+
+    root_node = test_graph.createNode({"layer": 0})
 
     for string in data:
         curr = root_node
@@ -21,11 +23,13 @@ def test_prefix_tree(case, metadata, default_teardown):
             children = curr.children()
             next_node = next((child for child in (children if children is not None else []) if child.value().get('word') == words[index]), None)
             if next_node is None:
-                curr.add({"word": words[index], "layer": index})
+                curr.add({"word": words[index], "layer": index+1})
 
             curr = next((child for child in curr.children() if child.value().get('word') == words[index]), None)
     
+    bfs_list = []
     for node in test_graph.bfsGenerator(root_node):
-        print(node.value())
+        val = node.value()
+        bfs_list.append(f"Layer {val.get('layer')}: {val.get('word')}" if val.get('layer') else "root")
     
-    raise Exception()
+    assert output == bfs_list, "prefix trie BFS traversal should be as expected"

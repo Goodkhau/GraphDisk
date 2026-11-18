@@ -43,14 +43,14 @@ def test_nested_children(cleanUp, metadata):
     (
         node := graph.createNode()
             .add(graph.createNode()
-                .add(graph.createNode()))
+                .add({}))
             .add(graph.createNode()
-                .add(graph.createNode())
-                .add(graph.createNode()))
+                .add({})
+                .add({}))
             .add(graph.createNode()
-                .add(graph.createNode())
-                .add(graph.createNode())
-                .add(graph.createNode()))
+                .add({})
+                .add({})
+                .add({}))
     )
 
     root_id = 1
