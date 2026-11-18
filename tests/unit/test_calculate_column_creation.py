@@ -1,10 +1,10 @@
 import pytest
 
-from src.disk_graph import calculateRowCreation
+from src.disk_graph import calculateColumnCreation
 
 def check(case):
     data, output = case
-    new_columns, updated_config = calculateRowCreation(data['columns'], data['config'])
+    new_columns, updated_config = calculateColumnCreation(data['columns'], data['config'])
     assert new_columns == output['new_columns']
     assert updated_config == output['updated_config']
 

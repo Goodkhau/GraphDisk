@@ -2,11 +2,12 @@ import pytest
 from disk_graph import Graph, ColumnType
 
 @pytest.mark.e2e
-def test_prefix_tree(case):
+def test_prefix_tree(case, metadata, default_teardown):
     data, output = case
     name = metadata['scenario']
 
-    test_graph = Graph(name, node_pk_type=ColumnType.String).updateConfigFile({
+    test_graph = Graph(name).updateConfigFile({
+        "word": ColumnType.String.name,
         "layer": ColumnType.Integer.name
     })
 
@@ -17,11 +18,14 @@ def test_prefix_tree(case):
 
         words = string.split(' ')
         for index in range(len(words)):
-            next_node = next((parent for parent in curr.parents() if parent.value().get('id') is words[index]), None)
+            children = curr.children()
+            next_node = next((child for child in (children if children is not None else []) if child.value().get('word') == words[index]), None)
             if next_node is None:
-                next_node = curr.add({"id": words[index], "layer": index+1})
+                curr.add({"word": words[index], "layer": index})
 
-            curr = next_node
+            curr = next((child for child in curr.children() if child.value().get('word') == words[index]), None)
     
     for node in test_graph.bfsGenerator(root_node):
-        pass
+        print(node.value())
+    
+    raise Exception()

@@ -19,7 +19,7 @@ number -> INTEGER
     """
 }
 
-def calculateRowCreation(existing_columns: list[dict], existing_config: dict) -> tuple(list[dict], list[dict]):
+def calculateColumnCreation(existing_columns: list[dict], existing_config: dict) -> tuple(list[dict], list[dict]):
     for column in existing_columns:
         column['type'] = ColumnType(column['type']).name
 
@@ -51,7 +51,7 @@ class Graph:
         existing_columns = self.db.select_table_columns('node')
         existing_config = self.readConfigFile()
 
-        new_columns, updated_config = calculateRowCreation(existing_columns, existing_config)
+        new_columns, updated_config = calculateColumnCreation(existing_columns, existing_config)
 
         success_cols, failed_cols = self.db.alter_node_columns(new_columns)
         for failed_col in failed_cols:
@@ -122,14 +122,13 @@ class Graph:
 
         deque.push_back(root)
         while not deque.empty():
-            front = deque.pop_back()
+            front = deque.pop_front()
 
             if visited.has(front):
                 continue
             visited.add(front)
 
             children = front.children()
-            print("Children:", [child.value() for child in children])
             for child in children:
                 if visited.has(child):
                     continue
