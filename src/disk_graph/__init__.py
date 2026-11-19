@@ -57,7 +57,7 @@ class Graph:
         for failed_col in failed_cols:
             updated_config.pop(failed_col, None)
 
-        self.updateConfigFile(updated_config)
+        return self.updateConfigFile(updated_config)
 
     def ifConfigNotExists(self):
         if not self.config_path.exists():
@@ -72,9 +72,7 @@ class Graph:
             with open(self.config_path, "w") as file:
                 json.dump(default_config | new_config, file, indent=4)
 
-            if update_tables:
-                self.updateTables()
-            return self
+            return self.updateTables() if update_tables else self
         except json.JSONDecodeError as Error:
             logger.error("Invalid JSON")
             raise Exception("Invalid JSON")

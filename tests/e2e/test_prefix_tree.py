@@ -6,12 +6,15 @@ def test_prefix_tree(case, metadata, default_teardown):
     data, output = case
     name = metadata['scenario']
 
-    test_graph = Graph(name).updateConfigFile({
-        "word": ColumnType.String.name,
-        "layer": ColumnType.Integer.name
-    })
+    test_graph = Graph(name)
 
-    test_graph.updateTables()
+    test_graph.updateConfigFile(
+        update_tables=True,
+        new_config = {
+            "word": ColumnType.String.name,
+            "layer": ColumnType.Integer.name
+        }
+    )
 
     root_node = test_graph.createNode({"layer": 0})
 
