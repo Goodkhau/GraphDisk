@@ -1,17 +1,19 @@
 import uuid
 
+from disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
 
 class Deque:
-    def __init__(self, db: database_interface, session_id = str(uuid.uuid4())):
-        self.session_id = session_id
-        self.db = db
+    def __init__(self, db: database_interface, session_id: str | None = None):
+        self.session_id: str = session_id if session_id is not None else str(uuid.uuid4())
+        self.db: database_interface = db
+        _ = self.db.insert_session(self.session_id)
     
     def empty(self):
         count_rows = self.db.count_deque(self.session_id)
         return count_rows == 0
 
-    def push_front(self, node_ptr_id):
+    def push_front(self, node_ptr: int):
         pass
 
     def push_back(self, node: Node):
@@ -24,11 +26,11 @@ class Deque:
 
     def front(self) -> Node | None:
         front_row = self.db.select_deque_highest(self.session_id)
-        return Node(front_row[2], self.db) if front_row is not None else None
+        return Node(node_ptr=front_row[2], db=self.db) if front_row is not None else None
 
     def back(self):
         back_row = self.db.select_deque_lowest(self.session_id)
-        return Node(back_row[2], self.db) if back_row is not None else None
+        return Node(node_ptr=back_row[2], db=self.db) if back_row is not None else None
 
     def pop_front(self):
         front_row = self.db.select_deque_highest(self.session_id)

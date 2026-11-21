@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from enum import Enum
 from typing import Literal, overload
 
@@ -22,7 +23,7 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def insert_session(self, session_id: str):
+    def insert_session(self, session_id: str) -> str:
         pass
 
     @abstractmethod
@@ -68,7 +69,7 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def paginate_all_nodes(self, page_size, use_dict_fact):
+    def paginate_all_node_ptr(self, page_size: int, use_dict_fact: bool) -> Generator[list[dict[str, str | int]] | tuple[tuple[str | int]]]:
         pass
     
     @abstractmethod
@@ -76,17 +77,25 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def select_deque_highest(self, session_id: str) -> tuple[int, int, int, str]:
+    def select_deque_highest(self, session_id: str) -> tuple[int, int, int, str] | None:
         pass
 
     @abstractmethod
-    def select_deque_lowest(self, session_id: str) -> tuple(int, int, int, str):
+    def select_deque_lowest(self, session_id: str) -> tuple[int, int, int, str] | None:
         pass
 
     @abstractmethod
-    def delete_deque(self, position: int, session_id: str) -> tuple(int, int, int, str):
+    def delete_deque(self, position: int, session_id: str) -> tuple[int, int, int, str] | None:
         pass
 
     @abstractmethod
-    def count_deque(self, session_id: str):
+    def count_deque(self, session_id: str) -> int:
+        pass
+
+    @abstractmethod
+    def select_collection(self, node_ptr: int, session_id: str) -> tuple[str | int] | None:
+        pass
+
+    @abstractmethod
+    def insert_collection(self, node_ptr: int, session_id: str) -> int:
         pass

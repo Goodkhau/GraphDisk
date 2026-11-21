@@ -4,8 +4,8 @@ from src.disk_graph.db.database_interface import database_interface, Edges
 
 @dataclass(order=True)
 class Node:
-    def __init__(self, node_ptr, db):
-        self.ptr = node_ptr
+    def __init__(self, node_ptr: int, db: database_interface):
+        self.ptr: int = node_ptr
         self._db: database_interface = db
     
     def value(self, use_dict_fact = True):

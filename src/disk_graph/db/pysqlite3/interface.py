@@ -1,10 +1,9 @@
 import sqlite3
-import uuid
 from pathlib import Path
-from typing import Literal, overload, override
+from typing import Literal, overload, override, cast
+from collections.abc import Generator
 from enum import Enum
 from contextlib import closing
-from datetime import datetime
  
 from src.disk_graph.db.database_interface import database_interface, Edges, NodePtr
  
@@ -51,7 +50,7 @@ class Sqlite3Interface(database_interface):
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
         self.create_tables(node_pk_type=node_pk_type)
  
-    def insert_session(self, session_id: str):
+    def insert_session(self, session_id: str) -> str:
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
             cursor = transaction.cursor()
             cursor.execute(
@@ -272,8 +271,9 @@ class Sqlite3Interface(database_interface):
                 """,
                 (to_node_ptr,)
             ).fetchall()
- 
-    def paginate_all_nodes(self, page_size, use_dict_fact):
+
+    @override
+    def paginate_all_node_ptr(self, page_size: int, use_dict_fact: bool) -> Generator[list[dict[str, str | int]] | tuple[tuple[str | int]]]:
         MAX_PAGE_SIZE = 10000
         MIN_PAGE_SIZE = 100
         page_size = min(MAX_PAGE_SIZE, page_size)
@@ -311,9 +311,10 @@ class Sqlite3Interface(database_interface):
             conn.commit()
             return node_ptr
     
-    def select_deque_highest(self, session_id: str) -> tuple(int, int, int, str):
+    @override
+    def select_deque_highest(self, session_id: str) -> tuple[int, int, int, str] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            return conn.execute(
+            highest: tuple[int, int, int, str] = conn.execute(
                 f"""
                     SELECT *
                     FROM deque
@@ -323,10 +324,13 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id,)
             ).fetchone()
+        
+        return highest
     
-    def select_deque_lowest(self, session_id: str) -> tuple(int, int, int, str):
+    @override
+    def select_deque_lowest(self, session_id: str) -> tuple[int, int, int, str] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            return conn.execute(
+            lowest: tuple[int, int, int, str] = conn.execute(
                 f"""
                     SELECT *
                     FROM deque
@@ -336,11 +340,14 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id,)
             ).fetchone()
+        
+        return lowest
     
-    def delete_deque(self, position: int, session_id: str) -> tuple(int, int, int, str):
+    @override
+    def delete_deque(self, position: int, session_id: str) -> tuple[int, int, int, str] | None:
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
             cursor = transaction.cursor()
-            deleted_rows = cursor.execute(
+            deleted_rows: list[tuple[int, int, int, str]] = cursor.execute(
                 f"""
                     DELETE FROM deque
                     WHERE {Deque.Session.value} = ?
@@ -349,11 +356,12 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id,position,)
             ).fetchall()
-        return deleted_rows[0]
+
+        return deleted_rows[0] if deleted_rows else None
  
-    def count_deque(self, session_id: str):
+    def count_deque(self, session_id: str) -> int:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            return conn.execute(
+            num_rows: int =  conn.execute(
                 f"""
                     SELECT COUNT(*)
                     FROM deque
@@ -361,10 +369,12 @@ class Sqlite3Interface(database_interface):
                 """,
                 (session_id,)
             ).fetchone()[0]
+        
+        return num_rows
     
-    def insert_collection(self, node_ptr: int, session_id: str):
+    def insert_collection(self, node_ptr: int, session_id: str) -> int:
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
-            transaction.execute(
+            _ = transaction.execute(
                 f"""
                     INSERT OR IGNORE INTO collection
                         ({Collection.NodePtr.value},{Collection.Session.value})
@@ -375,9 +385,9 @@ class Sqlite3Interface(database_interface):
         
         return node_ptr
     
-    def select_collection(self, node_ptr: int, session_id: str):
+    def select_collection(self, node_ptr: int, session_id: str) -> tuple[str | int] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            collection_row = conn.execute(
+            collection_row: tuple[str | int] | None = conn.execute(
                 f"""
                     SELECT *
                     FROM collection

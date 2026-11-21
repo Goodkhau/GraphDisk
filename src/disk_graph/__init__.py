@@ -106,13 +106,13 @@ class Graph:
         row = self.db.select_node(pk, False)
         return None if row == None else Node(row[0], self.db)
     
-    def getAllNodeValuesByPage(self, page_size: int = 1000, use_dict_fact: bool = True) -> Generator[list[dict[str, str | int] | tuple[tuple[str | int]]]]:
-        return self.db.paginate_all_nodes(page_size, use_dict_fact)
+    def getAllNodeValuesByPage(self, page_size: int = 1000, use_dict_fact: bool = True) -> Generator[list[dict[str, str | int]] | tuple[tuple[str | int]], None, None]:
+        return self.db.paginate_all_node_ptr(page_size, use_dict_fact)
     
-    def createDeque(self, session_id: str = str(uuid.uuid4())) -> Deque:
+    def createDeque(self, session_id: str = str(uuid.uuid4())) -> Deque:  # pyright: ignore[reportCallInDefaultInitializer]
         return Deque(self.db, session_id)
     
-    def createCollection(self, session_id: str = str(uuid.uuid4())) -> Collection:
+    def createCollection(self, session_id: str = str(uuid.uuid4())) -> Collection:  # pyright: ignore[reportCallInDefaultInitializer]
         return Collection(self.db, session_id)
     
     def bfsGenerator(self, root: Node):
@@ -120,18 +120,19 @@ class Graph:
         deque = self.createDeque(session_id)
         visited = self.createCollection(session_id)
 
-        deque.push_back(root)
+        _ = deque.push_back(root)
         while not deque.empty():
             front = deque.pop_front()
+            assert front is not None
 
             if visited.has(front):
                 continue
-            visited.add(front)
+            _ = visited.add(front)
 
             children = front.children()
             for child in children:
                 if visited.has(child):
                     continue
-                deque.push_back(child)
+                _ = deque.push_back(child)
             
             yield front
