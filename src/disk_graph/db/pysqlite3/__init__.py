@@ -8,10 +8,10 @@ from enum import Enum
 from contextlib import closing
  
 from src.disk_graph.db.database_interface import Edge, database_interface, NodePtr
-from .ColumnType import ColumnType as ColumnType
+from .column_type import ColumnType as ColumnType
  
-def dict_factory(cursor, row):
-    return {col[0]: val for col, val in zip(cursor.description, row)}
+def dict_factory(cursor: sqlite3.Cursor, row) -> dict[str, str | int]:  # pyright: ignore[reportUnknownParameterType, reportMissingParameterType]
+    return {col[0]: val for col, val in zip(cursor.description, row)}  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
  
 def calculateRowInsertion(columns: list[dict[str, str]], row_data: dict[str, str | int]) -> tuple[str, list[str | int | None]]:
     insert_data: list[str | int | None] = [row_data.get(column['name']) for column in columns]
@@ -20,15 +20,6 @@ def calculateRowInsertion(columns: list[dict[str, str]], row_data: dict[str, str
         "(" + ",".join("?" * len(columns)) + ")",
         insert_data
     )
- 
-    # This function overrides enum indexing failure. Makes indexing this enum soft casing.
-    @classmethod
-    def _missing_(cls, value):
-        if isinstance(value, str):
-            for member in cls:
-                if member.value.lower() == value.lower():
-                    return member
-        return super()._missing_(value)
  
 class Collection(str, Enum):
     NodePtr = "node_ptr_id"
@@ -40,7 +31,9 @@ class Deque(str, Enum):
     Session     = "session_id"
  
 class Sqlite3Interface(database_interface):
-    def __init__(self, name: str, graphs_folder: Path, node_pk_type: ColumnType):
+    def __init__(self, name: str, graphs_folder: Path, node_pk_type: ColumnType) -> None:
+        super().__init__(name, graphs_folder, node_pk_type)
+
         self.graph_path: Path = Path.joinpath(graphs_folder, name)
         self.graph_path.mkdir(parents=True, exist_ok=True)
  
@@ -302,7 +295,8 @@ class Sqlite3Interface(database_interface):
                 yield rows
                 last = rows[-1].get('id') if use_dict_fact else rows[-1][0]
     
-    def insert_deque(self, position: int, node_ptr: int, session_id: str):
+    @override
+    def insert_deque(self, position: int, node_ptr: int, session_id: str) -> int:
         with sqlite3.connect(self.database_file) as conn:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
@@ -365,6 +359,7 @@ class Sqlite3Interface(database_interface):
 
         return deleted_rows[0] if deleted_rows else None
  
+    @override
     def count_deque(self, session_id: str) -> int:
         with closing(sqlite3.connect(self.database_file)) as conn:
             num_rows: int =  conn.execute(
@@ -378,6 +373,7 @@ class Sqlite3Interface(database_interface):
         
         return num_rows
     
+    @override
     def insert_collection(self, node_ptr: int, session_id: str) -> int:
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
             _ = transaction.execute(
@@ -391,6 +387,7 @@ class Sqlite3Interface(database_interface):
         
         return node_ptr
     
+    @override
     def select_collection(self, node_ptr: int, session_id: str) -> tuple[str | int] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:
             collection_row: tuple[str | int] | None = conn.execute(

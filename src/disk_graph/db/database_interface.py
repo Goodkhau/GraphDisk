@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
 from enum import Enum
-from typing import Literal, NamedTuple, overload
+from pathlib import Path
+from typing import Any, Literal, NamedTuple, overload
 
 class Edge(NamedTuple):
     id:             int
@@ -14,7 +15,7 @@ class NodePtr(str, Enum):
     OutDegree   = "out_degree"
 
 class database_interface(ABC):
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str, graphs_folder: Path, node_pk_type: Any) -> None:  # pyright: ignore[reportAny, reportExplicitAny]
         pass
 
     @abstractmethod
@@ -22,7 +23,7 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def create_tables(self) -> None:
+    def create_tables(self, node_pk_type: Any) -> None:  # pyright: ignore[reportExplicitAny, reportAny]
         pass
 
     @abstractmethod
@@ -68,7 +69,7 @@ class database_interface(ABC):
         pass
     
     @abstractmethod
-    def insert_deque(self, position: int, node_ptr: int, session_id: str):
+    def insert_deque(self, position: int, node_ptr: int, session_id: str) -> int:
         pass
 
     @abstractmethod

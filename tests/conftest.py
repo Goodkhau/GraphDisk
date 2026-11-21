@@ -25,7 +25,7 @@ def case(request):
     return get_data(test_file=test_file, scenario=request.node.name)
 
 @pytest.fixture
-def metadata(request):
+def metadata(request) -> dict[str, str]:
     return {
         "scenario": request.node.name
     }

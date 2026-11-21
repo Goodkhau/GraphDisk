@@ -4,11 +4,11 @@ from disk_graph import Graph, ColumnType
 @pytest.mark.e2e
 def test_prefix_tree(case, metadata, default_teardown):
     data, output = case
-    name = metadata['scenario']
+    name: str = metadata['scenario']
 
     test_graph = Graph(name)
 
-    test_graph.updateConfigFile(
+    _ = test_graph.updateConfigFile(
         update_tables=True,
         new_config = {
             "word": ColumnType.String.name,
@@ -29,6 +29,7 @@ def test_prefix_tree(case, metadata, default_teardown):
                 curr.add({"word": words[index], "layer": index+1})
 
             curr = next((child for child in curr.children() if child.value().get('word') == words[index]), None)
+            assert curr is not None
     
     bfs_list = []
     for node in test_graph.bfsGenerator(root_node):

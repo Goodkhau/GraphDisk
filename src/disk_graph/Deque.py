@@ -19,9 +19,9 @@ class Deque:
     def push_back(self, node: Node):
         back_row = self.db.select_deque_lowest(self.session_id)
         if back_row is None:
-            self.db.insert_deque(position=0, node_ptr=node.ptr, session_id=self.session_id)
+            _ = self.db.insert_deque(position=0, node_ptr=node.ptr, session_id=self.session_id)
         else:
-            self.db.insert_deque(position=back_row[1]-1, node_ptr=node.ptr, session_id=self.session_id)
+            _ = self.db.insert_deque(position=back_row[1]-1, node_ptr=node.ptr, session_id=self.session_id)
         return self
 
     def front(self) -> Node | None:

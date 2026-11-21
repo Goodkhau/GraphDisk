@@ -5,7 +5,7 @@ from collections.abc import Generator
 import uuid
 from pathlib import Path
 
-from src.disk_graph.db.pysqlite3 import ColumnType, Sqlite3Interface as db
+from src.disk_graph.db.pysqlite3 import ColumnType as ColumnType, Sqlite3Interface as db
 from src.disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
 from src.disk_graph.Deque import Deque
