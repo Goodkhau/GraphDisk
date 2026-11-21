@@ -13,10 +13,10 @@ def test_chain_adding_children(cleanUp, metadata):
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
     (
-        children := graph.createNode()
-            .add(graph.createNode())
-            .add(graph.createNode())
-            .add(graph.createNode())
+        children := graph.createNode({})
+            .add(graph.createNode({}))
+            .add(graph.createNode({}))
+            .add(graph.createNode({}))
             .children()
     )
 
@@ -41,13 +41,13 @@ def test_nested_children(cleanUp, metadata):
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
     (
-        node := graph.createNode()
-            .add(graph.createNode()
+        node := graph.createNode({})
+            .add(graph.createNode({})
                 .add({}))
-            .add(graph.createNode()
+            .add(graph.createNode({})
                 .add({})
                 .add({}))
-            .add(graph.createNode()
+            .add(graph.createNode({})
                 .add({})
                 .add({})
                 .add({}))
@@ -78,8 +78,8 @@ def test_duplicate_connection(cleanUp, metadata):
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
-    node_one = graph.createNode()
-    node_two = graph.createNode()
+    node_one = graph.createNode({})
+    node_two = graph.createNode({})
 
     node_one.add(node_two).add(node_two)
     node_one.add(node_two)

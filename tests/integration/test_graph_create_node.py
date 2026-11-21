@@ -42,13 +42,13 @@ def test_auto_incrementing_passing_pk(cleanUp, metadata, Config):
     nonincrementing_id = 113
 
     for i in range(first_segment):
-        node = graph.createNode().value()
+        node = graph.createNode({}).value()
         assert node.get('id') == i+1, "node object should be created with expected id"
     
     node = graph.createNode({ "id": nonincrementing_id }).value()
     assert node.get('id') == nonincrementing_id, "node object should be created with expected id"
     for i in range(second_segment-1):
-        node = graph.createNode().value()
+        node = graph.createNode({}).value()
         assert node.get('id') == nonincrementing_id+i+1, "node object should be created with expected id"
 
     rows = list(next(graph.getAllNodeValuesByPage()))

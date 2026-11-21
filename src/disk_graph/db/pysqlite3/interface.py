@@ -1,7 +1,7 @@
 import sqlite3
 import uuid
 from pathlib import Path
-from typing import Literal
+from typing import Literal, overload, override
 from enum import Enum
 from contextlib import closing
 from datetime import datetime
@@ -44,8 +44,8 @@ class Deque(str, Enum):
     Session     = "session_id"
  
 class Sqlite3Interface(database_interface):
-    def __init__(self, name: str, graphs_folder: str, node_pk_type: ColumnType):
-        self.graph_path = Path.joinpath(graphs_folder, name)
+    def __init__(self, name: str, graphs_folder: Path, node_pk_type: ColumnType):
+        self.graph_path: Path = Path.joinpath(graphs_folder, name)
         self.graph_path.mkdir(parents=True, exist_ok=True)
  
         self.database_file = Path.joinpath(self.graph_path, "graph.db")
@@ -66,7 +66,7 @@ class Sqlite3Interface(database_interface):
  
     def create_tables(self, node_pk_type: ColumnType):
         with closing(sqlite3.connect(self.database_file)) as conn:
-            conn.executescript(f"""
+            _ = conn.executescript(f"""
                 PRAGMA foreign_keys = ON;
                 CREATE TABLE IF NOT EXISTS node (
                     id {ColumnType[node_pk_type.name].value} PRIMARY KEY
@@ -107,7 +107,8 @@ class Sqlite3Interface(database_interface):
                 );
             """)
  
-    def select_tables(self):
+    @override
+    def select_tables(self) -> list[str]:
         with closing(sqlite3.connect(self.database_file)) as conn:
             tables = conn.execute(
                 """
@@ -120,21 +121,23 @@ class Sqlite3Interface(database_interface):
  
             return [table[0] for table in tables]
  
-    def select_table_columns(self, name: str):
+    @override
+    def select_table_columns(self, name: str) -> list[dict[str, str]]:
         with closing(sqlite3.connect(self.database_file)) as conn:
             conn.row_factory = dict_factory
             return conn.execute(f"SELECT * FROM pragma_table_info('{name}');").fetchall()
  
-    def alter_node_columns(self, new_columns: list[dict]):
-        successful_creation = []
-        failed_creation = []
+    @override
+    def alter_node_columns(self, new_columns: list[dict[str,str | ColumnType]]):
+        successful_creation: list[str] = []
+        failed_creation: list[str] = []
         with closing(sqlite3.connect(self.database_file)) as conn:
             for column in new_columns:
                 if column['name'] == 'id':
                     continue
 
                 try:
-                    conn.execute(f"""
+                    _ = conn.execute(f"""
                         ALTER TABLE node
                         ADD COLUMN {column['name']} {ColumnType[column['type']].value};
                     """)
@@ -147,8 +150,15 @@ class Sqlite3Interface(database_interface):
             successful_creation,
             failed_creation
         )
-    
-    def select_node(self, node_ptr, use_dict_fact):
+
+    @overload
+    def select_node(self, node_ptr: int, use_dict_fact: Literal[True]) -> dict[str, str | int] | None: ...
+
+    @overload
+    def select_node(self, node_ptr: int, use_dict_fact: Literal[False]) -> tuple[list[str | int]] | None: ...
+
+    @override
+    def select_node(self, node_ptr: int, use_dict_fact: bool) -> dict[str, str | int] | tuple[list[str | int]] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:
             if use_dict_fact:
                 conn.row_factory = dict_factory
@@ -163,7 +173,7 @@ class Sqlite3Interface(database_interface):
                 (node_ptr,)
             ).fetchone()
  
-    def insert_node(self, row_data: dict):
+    def insert_node(self, row_data: dict[str, str | int]):
         columns = self.select_table_columns('node')
  
         pk = row_data.get('id')

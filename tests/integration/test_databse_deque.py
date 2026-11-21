@@ -12,8 +12,8 @@ def test_deque_push_back(metadata, cleanUp):
 
     deque = graph.createDeque()
 
-    node_one = graph.createNode()
-    node_two = graph.createNode()
+    node_one = graph.createNode({})
+    node_two = graph.createNode({})
 
     assert deque.empty() == True, "deque should initially be empty"
     assert deque.front() == None, "front position should be none"
@@ -40,8 +40,8 @@ def test_deque_pop_front(metadata, cleanUp):
     graph = Graph(name, graphs_folder=graphs_folder)
     deque = graph.createDeque()
 
-    node_one = graph.createNode()
-    node_two = graph.createNode()
+    node_one = graph.createNode({})
+    node_two = graph.createNode({})
 
     deque.push_back(node_one)
     deque.push_back(node_two)

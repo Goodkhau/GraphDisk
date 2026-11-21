@@ -10,9 +10,9 @@ def test_collection_class(metadata, cleanUp):
     graph = Graph(name, graphs_folder=graphs_folder)
     collection = graph.createCollection()
 
-    node_one = graph.createNode()
-    node_two = graph.createNode()
-    node_three = graph.createNode()
+    node_one = graph.createNode({})
+    node_two = graph.createNode({})
+    node_three = graph.createNode({})
 
     assert collection.has(node_one) == False, "collection should not have first ptr"
     assert collection.has(node_two) == False, "collection should not have second ptr"
