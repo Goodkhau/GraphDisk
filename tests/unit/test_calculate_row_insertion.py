@@ -1,6 +1,6 @@
 import pytest
 
-from src.disk_graph.db.pysqlite3.interface import calculateRowInsertion
+from src.disk_graph.db.pysqlite3 import calculateRowInsertion
 
 def check(case):
     data, output = case

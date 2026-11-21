@@ -15,13 +15,9 @@ class Node:
     def add(self, to_node: dict[str, str | int] | Node) -> Self:
         if isinstance(to_node, Node):
             _ = self._db.insert_edge(from_ptr=self.ptr, to_ptr=to_node.ptr)
-        elif isinstance(to_node, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
-            new_node_ptr = self._db.insert_node(to_node)
-            if new_node_ptr is None:
-                raise Exception(f"Failed to create Node")
-            _ = self._db.insert_edge(from_ptr=self.ptr, to_ptr=new_node_ptr)
         else:
-            raise Exception(f"Unexpected type for to_node: {type(to_node_ptr)}")  # pyright: ignore[reportUnreachable]
+            new_node_ptr = self._db.insert_node(to_node)
+            _ = self._db.insert_edge(from_ptr=self.ptr, to_ptr=new_node_ptr)
 
         return self
 

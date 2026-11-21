@@ -2,7 +2,7 @@ import pytest
 import json
 
 from src.disk_graph import Graph, default_config
-from src.disk_graph.db.pysqlite3.interface import ColumnType
+from src.disk_graph.db.pysqlite3 import ColumnType
 
 @pytest.mark.integration
 def test_graph_creation(cleanUp, metadata, Config):

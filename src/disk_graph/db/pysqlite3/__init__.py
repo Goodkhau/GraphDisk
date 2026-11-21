@@ -1,4 +1,6 @@
+# pyright: reportAny=false
 import sqlite3
+
 from pathlib import Path
 from typing import Literal, overload, override
 from collections.abc import Generator
@@ -6,23 +8,18 @@ from enum import Enum
 from contextlib import closing
  
 from src.disk_graph.db.database_interface import Edge, database_interface, NodePtr
+from .ColumnType import ColumnType as ColumnType
  
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
  
-def calculateRowInsertion(columns: list[dict], row_data: dict) -> tuple(str, list):
-    insert_data = [row_data.get(column['name']) for column in columns]
+def calculateRowInsertion(columns: list[dict[str, str]], row_data: dict[str, str | int]) -> tuple[str, list[str | int | None]]:
+    insert_data: list[str | int | None] = [row_data.get(column['name']) for column in columns]
  
     return (
         "(" + ",".join("?" * len(columns)) + ")",
         insert_data
     )
- 
-class ColumnType(str, Enum):
-    Integer   = "INTEGER"
-    Float     = "REAL"
-    String    = "TEXT"
-    Bytes     = "BLOB"
  
     # This function overrides enum indexing failure. Makes indexing this enum soft casing.
     @classmethod
@@ -47,13 +44,14 @@ class Sqlite3Interface(database_interface):
         self.graph_path: Path = Path.joinpath(graphs_folder, name)
         self.graph_path.mkdir(parents=True, exist_ok=True)
  
-        self.database_file = Path.joinpath(self.graph_path, "graph.db")
+        self.database_file: Path = Path.joinpath(self.graph_path, "graph.db")
         self.create_tables(node_pk_type=node_pk_type)
  
+    @override
     def insert_session(self, session_id: str) -> str:
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
             cursor = transaction.cursor()
-            cursor.execute(
+            _ = cursor.execute(
                 f"""
                     INSERT OR IGNORE INTO session
                     VALUES (?)
@@ -63,7 +61,8 @@ class Sqlite3Interface(database_interface):
 
         return session_id
  
-    def create_tables(self, node_pk_type: ColumnType):
+    @override
+    def create_tables(self, node_pk_type: ColumnType) -> None:
         with closing(sqlite3.connect(self.database_file)) as conn:
             _ = conn.executescript(f"""
                 PRAGMA foreign_keys = ON;
@@ -109,7 +108,7 @@ class Sqlite3Interface(database_interface):
     @override
     def select_tables(self) -> list[str]:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            tables = conn.execute(
+            tables: list[tuple[str]] = conn.execute(
                 """
                     SELECT name
                     FROM sqlite_schema
@@ -154,10 +153,10 @@ class Sqlite3Interface(database_interface):
     def select_node(self, node_ptr: int, use_dict_fact: Literal[True]) -> dict[str, str | int] | None: ...
 
     @overload
-    def select_node(self, node_ptr: int, use_dict_fact: Literal[False]) -> tuple[list[str | int]] | None: ...
+    def select_node(self, node_ptr: int, use_dict_fact: Literal[False]) -> tuple[int] | None: ...
 
     @override
-    def select_node(self, node_ptr: int, use_dict_fact: bool) -> dict[str, str | int] | tuple[list[str | int]] | None:
+    def select_node(self, node_ptr: int, use_dict_fact: bool) -> dict[str, str | int] | tuple[int] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:
             if use_dict_fact:
                 conn.row_factory = dict_factory
@@ -173,7 +172,7 @@ class Sqlite3Interface(database_interface):
             ).fetchone()
  
     @override
-    def insert_node(self, row_data: dict[str, str | int]) -> int | None:
+    def insert_node(self, row_data: dict[str, str | int]) -> int:
         columns = self.select_table_columns('node')
  
         pk = row_data.get('id')
@@ -188,7 +187,7 @@ class Sqlite3Interface(database_interface):
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
             cursor = transaction.cursor()
  
-            existing_node_ptr = cursor.execute(
+            existing_node_ptr: tuple[int] | None = cursor.execute(
                 f"""
                     SELECT ptr.id
                     FROM node_ptr AS ptr
@@ -202,7 +201,7 @@ class Sqlite3Interface(database_interface):
             if existing_node_ptr:
                 return existing_node_ptr[0]
  
-            cursor.execute(
+            _ = cursor.execute(
                 f"""
                     INSERT INTO node 
                     VALUES {placeholder}
@@ -211,14 +210,15 @@ class Sqlite3Interface(database_interface):
             )
  
             pk = pk if pk != None else cursor.lastrowid
-            cursor.execute(
+            _ = cursor.execute(
                 f"""
                     INSERT INTO node_ptr ({NodePtr.Node.value})
                     VALUES (?)
                 """,
                 (pk,)
             )
-
+        
+        assert cursor.lastrowid is not None
         return cursor.lastrowid
     
     @override
@@ -306,7 +306,7 @@ class Sqlite3Interface(database_interface):
         with sqlite3.connect(self.database_file) as conn:
             conn = sqlite3.connect(self.database_file)
             cursor = conn.cursor()
-            cursor.execute(
+            _ = cursor.execute(
                 f"""
                     INSERT INTO deque
                         ({Deque.Position.value},{Deque.NodePtr.value},{Deque.Session.value})

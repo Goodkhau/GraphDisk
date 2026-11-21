@@ -3,7 +3,7 @@ import random
 import sqlite3
 
 from src.disk_graph import Graph
-from src.disk_graph.db.pysqlite3.interface import ColumnType
+from src.disk_graph.db.pysqlite3 import ColumnType
 
 @pytest.mark.integration
 def test_auto_incrementing(cleanUp, metadata, Config):

@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 
-from src.disk_graph.db.pysqlite3.interface import Sqlite3Interface, ColumnType
+from src.disk_graph.db.pysqlite3 import Sqlite3Interface, ColumnType
 from src.disk_graph.db.database_interface import database_interface
 
 expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'collection', 'deque']

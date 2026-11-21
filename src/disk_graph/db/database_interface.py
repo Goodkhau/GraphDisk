@@ -14,12 +14,6 @@ class NodePtr(str, Enum):
     OutDegree   = "out_degree"
 
 class database_interface(ABC):
-    class Deque:
-        pass
-
-    class Set:
-        pass
-
     def __init__(self, name: str = ''):
         pass
 
@@ -28,7 +22,7 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def create_tables(self):
+    def create_tables(self) -> None:
         pass
 
     @abstractmethod
@@ -47,14 +41,14 @@ class database_interface(ABC):
     def select_node(self, node_ptr: int, use_dict_fact: Literal[True]) -> dict[str, str | int] | None: ...
 
     @overload
-    def select_node(self, node_ptr: int, use_dict_fact: Literal[False]) -> tuple[str | int] | None: ...
+    def select_node(self, node_ptr: int, use_dict_fact: Literal[False]) -> tuple[int] | None: ...
 
     @abstractmethod
-    def select_node(self, node_ptr: int, use_dict_fact: bool) -> dict[str, str | int] | tuple[str | int] | None:
+    def select_node(self, node_ptr: int, use_dict_fact: bool) -> dict[str, str | int] | tuple[int] | None:
         pass
 
     @abstractmethod
-    def insert_node(self, row_data: dict[str, str | int]) -> int | None:
+    def insert_node(self, row_data: dict[str, str | int]) -> int:
         pass
 
     @abstractmethod
