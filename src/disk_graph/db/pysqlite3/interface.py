@@ -1,11 +1,11 @@
 import sqlite3
 from pathlib import Path
-from typing import Literal, overload, override, cast
+from typing import Literal, overload, override
 from collections.abc import Generator
 from enum import Enum
 from contextlib import closing
  
-from src.disk_graph.db.database_interface import database_interface, Edges, NodePtr
+from src.disk_graph.db.database_interface import Edge, database_interface, NodePtr
  
 def dict_factory(cursor, row):
     return {col[0]: val for col, val in zip(cursor.description, row)}
@@ -81,11 +81,11 @@ class Sqlite3Interface(database_interface):
  
                 CREATE TABLE IF NOT EXISTS edges (
                     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                    {Edges.From.value}  INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
-                    {Edges.To.value}    INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
+                    from_node_ptr       INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE,
+                    to_node_ptr         INTEGER NOT NULL REFERENCES node_ptr(id) ON DELETE CASCADE
                 );
-                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges({Edges.From.value});
-                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges({Edges.To.value});
+                CREATE INDEX IF NOT EXISTS idx_edges_from_node ON edges(from_node_ptr);
+                CREATE INDEX IF NOT EXISTS idx_edges_to_node ON edges(to_node_ptr);
  
                 CREATE TABLE IF NOT EXISTS session (
                     id TEXT PRIMARY KEY
@@ -172,7 +172,8 @@ class Sqlite3Interface(database_interface):
                 (node_ptr,)
             ).fetchone()
  
-    def insert_node(self, row_data: dict[str, str | int]):
+    @override
+    def insert_node(self, row_data: dict[str, str | int]) -> int | None:
         columns = self.select_table_columns('node')
  
         pk = row_data.get('id')
@@ -217,9 +218,11 @@ class Sqlite3Interface(database_interface):
                 """,
                 (pk,)
             )
+
         return cursor.lastrowid
     
-    def insert_edge(self, from_ptr, to_ptr, throw_on_duplicate):
+    @override
+    def insert_edge(self, from_ptr: int, to_ptr: int) -> int | None:
         with closing(sqlite3.connect(self.database_file)) as conn, conn as transaction:
             cursor = transaction.cursor()
  
@@ -227,50 +230,53 @@ class Sqlite3Interface(database_interface):
                 f"""
                     SELECT id
                     FROM edges
-                    WHERE {Edges.From.value} = (?)
-                        AND {Edges.To.value} = (?)
+                    WHERE from_node_ptr = (?)
+                        AND to_node_ptr = (?)
                 """,
                 (from_ptr, to_ptr,)
             ).fetchone()
  
             if existing_connection:
-                return
+                return None
  
-            cursor.execute(
+            _ = cursor.execute(
                 f"""
                     INSERT INTO edges
-                        ({Edges.From.value},{Edges.To.value})
+                        (from_node_ptr,to_node_ptr)
                     VALUES (?,?)
                 """,
                 (from_ptr, to_ptr,)
             )
+
         return cursor.lastrowid
     
-    def select_edge_to_ptr(self, from_node_ptr, use_dict_fact = True) -> list[ dict[EdgesColumns.To.value, int] | tuple(any) ]:
+    @override
+    def select_edge_to_ptr(self, from_node_ptr: int) -> list[Edge]:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            if use_dict_fact:
-                conn.row_factory = dict_factory
-            return conn.execute(
+            edges: list[tuple[int, int, int]] = conn.execute(
                 f"""
-                    SELECT {Edges.To.value}
+                    SELECT *
                     FROM edges
-                    WHERE {Edges.From.value} = (?)
+                    WHERE from_node_ptr = (?)
                 """,
                 (from_node_ptr,)
             ).fetchall()
+
+            return [Edge(*edge) for edge in edges]
     
-    def select_edge_from_ptr(self, to_node_ptr, use_dict_fact = True):
+    @override
+    def select_edge_from_ptr(self, to_node_ptr: int) -> list[Edge]:
         with closing(sqlite3.connect(self.database_file)) as conn:
-            if use_dict_fact:
-                conn.row_factory = dict_factory
-            return conn.execute(
+            edges: list[tuple[int, int, int]] = conn.execute(
                 f"""
-                    SELECT {Edges.From.value}
+                    SELECT *
                     FROM edges
-                    WHERE {Edges.To.value} = (?)
+                    WHERE to_node_ptr = (?)
                 """,
                 (to_node_ptr,)
             ).fetchall()
+
+            return [Edge(*edge) for edge in edges]
 
     @override
     def paginate_all_node_ptr(self, page_size: int, use_dict_fact: bool) -> Generator[list[dict[str, str | int]] | tuple[tuple[str | int]]]:

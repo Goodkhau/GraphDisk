@@ -1,7 +1,7 @@
 from typing import Self
 import uuid
 
-from disk_graph.db.database_interface import database_interface
+from src.disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
 
 class Collection:

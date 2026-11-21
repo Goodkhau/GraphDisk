@@ -100,20 +100,20 @@ class Graph:
     
     def createNode(self, row_data: dict[str, str | int]) -> Node:
         node_ptr_id = self.db.insert_node(row_data)
-        return Node(node_ptr_id, self.db)
+        return Node(node_ptr=node_ptr_id, db=self.db)
 
     def getNode(self, pk: int) -> Node | None:
         row = self.db.select_node(pk, False)
-        return None if row == None else Node(row[0], self.db)
+        return None if row == None else Node(node_ptr=row[0], db=self.db)
     
     def getAllNodeValuesByPage(self, page_size: int = 1000, use_dict_fact: bool = True) -> Generator[list[dict[str, str | int]] | tuple[tuple[str | int]], None, None]:
         return self.db.paginate_all_node_ptr(page_size, use_dict_fact)
     
-    def createDeque(self, session_id: str = str(uuid.uuid4())) -> Deque:  # pyright: ignore[reportCallInDefaultInitializer]
-        return Deque(self.db, session_id)
+    def createDeque(self, session_id: str | None = None) -> Deque:
+        return Deque(db=self.db, session_id=session_id if session_id is not None else str(uuid.uuid4()))
     
-    def createCollection(self, session_id: str = str(uuid.uuid4())) -> Collection:  # pyright: ignore[reportCallInDefaultInitializer]
-        return Collection(self.db, session_id)
+    def createCollection(self, session_id: str | None = None) -> Collection:
+        return Collection(db=self.db, session_id=session_id if session_id is not None else str(uuid.uuid4()))
     
     def bfsGenerator(self, root: Node):
         session_id = str(uuid.uuid4())

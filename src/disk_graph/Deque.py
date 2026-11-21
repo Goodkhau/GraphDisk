@@ -1,6 +1,6 @@
 import uuid
 
-from disk_graph.db.database_interface import database_interface
+from src.disk_graph.db.database_interface import database_interface
 from src.disk_graph.Node import Node
 
 class Deque:
@@ -37,11 +37,11 @@ class Deque:
         if front_row is None:
             return None
         deleted_row = self.db.delete_deque(position=front_row[1], session_id=self.session_id)
-        return Node(deleted_row[2], self.db) if deleted_row is not None else None
+        return Node(node_ptr=deleted_row[2], db=self.db) if deleted_row is not None else None
 
     def pop_back(self):
         back_row = self.db.select_deque_lowest(self.session_id)
         if back_row is None:
             return None
         deleted_row = self.db.delete_deque(position=back_row[1], session_id=self.session_id)
-        return Node(deleted_row[2], self.db) if deleted_row is not None else None
+        return Node(node_ptr=deleted_row[2], db=self.db) if deleted_row is not None else None

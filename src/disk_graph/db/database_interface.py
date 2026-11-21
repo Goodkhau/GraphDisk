@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
 from enum import Enum
-from typing import Literal, overload
+from typing import Literal, NamedTuple, overload
 
-class Edges(str, Enum):
-    From    = "from_node_ptr"
-    To      = "to_node_ptr"
+class Edge(NamedTuple):
+    id:             int
+    from_node_ptr:  int
+    to_node_ptr:    int
 
 class NodePtr(str, Enum):
     Node        = "node"
@@ -53,19 +54,19 @@ class database_interface(ABC):
         pass
 
     @abstractmethod
-    def insert_node(self, row_data: dict[str, str | int]):
+    def insert_node(self, row_data: dict[str, str | int]) -> int | None:
         pass
 
     @abstractmethod
-    def insert_edge(self, from_ptr, to_ptr, throw_on_duplicate):
+    def insert_edge(self, from_ptr: int, to_ptr: int) -> int | None:
         pass
 
     @abstractmethod
-    def select_edge_to_ptr(self, from_node_ptr, use_dict_fact = True):
+    def select_edge_to_ptr(self, from_node_ptr: int) -> list[Edge]:
         pass
 
     @abstractmethod
-    def select_edge_from_ptr(self, to_node_ptr, use_dict_fact = True):
+    def select_edge_from_ptr(self, to_node_ptr: int) -> list[Edge]:
         pass
 
     @abstractmethod

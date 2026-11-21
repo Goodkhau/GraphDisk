@@ -1,8 +1,6 @@
 import pytest
-import json
 
 from src.disk_graph import Graph
-from src.disk_graph.db.pysqlite3.interface import ColumnType
 
 @pytest.mark.integration
 def test_chain_adding_children(cleanUp, metadata):
