@@ -7,7 +7,7 @@ from src.disk_graph.db.database_interface import database_interface
 expected_rows = ['node', 'node_ptr', 'sqlite_sequence', 'edges', 'session', 'collection', 'deque']
 
 @pytest.mark.pysqlite3_integration
-def test_table_creation(metadata, cleanUp):
+def test_table_creation(metadata: dict[str, str], cleanUp: Path):
     graphs_folder = cleanUp
     name = metadata['scenario']
 

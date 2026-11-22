@@ -2,21 +2,21 @@ import pytest
 import random
 import sqlite3
 
+from pathlib import Path
+
 from src.disk_graph import Graph
 from src.disk_graph.db.pysqlite3 import ColumnType
 
 @pytest.mark.integration
-def test_auto_incrementing(cleanUp, metadata, Config):
+def test_auto_incrementing(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     configs = {
         "cust_field": ColumnType.String.name
     }
 
-    Config.update(config_path, configs)
-    graph = Graph(name, graphs_folder=graphs_folder)
+    graph = Graph(name, graphs_folder=graphs_folder).updateConfigFile(new_config=configs)
 
     test_str = "test_str"
     num_rows = random.randint(1, 20)
@@ -32,7 +32,7 @@ def test_auto_incrementing(cleanUp, metadata, Config):
         assert rows[i].get("cust_field") == test_str, "cust_field should be populated with test string"
 
 @pytest.mark.integration
-def test_auto_incrementing_passing_pk(cleanUp, metadata, Config):
+def test_auto_incrementing_passing_pk(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     graph = Graph(name, graphs_folder=graphs_folder)
@@ -60,7 +60,7 @@ def test_auto_incrementing_passing_pk(cleanUp, metadata, Config):
         assert rows[first_segment+i].get("id") == nonincrementing_id+i, f"primary key should increment coninuing from {nonincrementing_id}"
     
 @pytest.mark.integration
-def test_integer_invalid_pk(cleanUp, metadata, Config):
+def test_integer_invalid_pk(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"

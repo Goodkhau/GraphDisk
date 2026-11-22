@@ -1,10 +1,13 @@
 import pytest
+
+from collections.abc import Generator
+
 from disk_graph import Graph, ColumnType
 
 @pytest.mark.e2e
-def test_prefix_tree(case, metadata, default_teardown):
+def test_prefix_tree(case: Generator[list[str]], metadata: dict[str, str], default_teardown):
     data, output = case
-    name: str = metadata['scenario']
+    name = metadata['scenario']
 
     test_graph = Graph(name)
 
@@ -24,14 +27,14 @@ def test_prefix_tree(case, metadata, default_teardown):
         words = string.split(' ')
         for index in range(len(words)):
             children = curr.children()
-            next_node = next((child for child in (children if children is not None else []) if child.value().get('word') == words[index]), None)
+            next_node = next((child for child in (children if children else []) if child.value().get('word') == words[index]), None)
             if next_node is None:
-                curr.add({"word": words[index], "layer": index+1})
+                _ = curr.add({"word": words[index], "layer": index+1})
 
             curr = next((child for child in curr.children() if child.value().get('word') == words[index]), None)
             assert curr is not None
     
-    bfs_list = []
+    bfs_list: list[str] = []
     for node in test_graph.bfsGenerator(root_node):
         val = node.value()
         bfs_list.append(f"Layer {val.get('layer')}: {val.get('word')}" if val.get('layer') else "root")

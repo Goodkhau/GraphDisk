@@ -144,10 +144,8 @@ class Sqlite3Interface(database_interface):
 
     @overload
     def select_node(self, node_ptr: int, use_dict_fact: Literal[True]) -> dict[str, str | int] | None: ...
-
     @overload
     def select_node(self, node_ptr: int, use_dict_fact: Literal[False]) -> tuple[int] | None: ...
-
     @override
     def select_node(self, node_ptr: int, use_dict_fact: bool) -> dict[str, str | int] | tuple[int] | None:
         with closing(sqlite3.connect(self.database_file)) as conn:

@@ -1,11 +1,12 @@
+from pathlib import Path
+
 import pytest
-import json
 
 from src.disk_graph import Graph, default_config
 from src.disk_graph.db.pysqlite3 import ColumnType
 
 @pytest.mark.integration
-def test_graph_creation(cleanUp, metadata, Config):
+def test_graph_creation(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
@@ -17,9 +18,7 @@ def test_graph_creation(cleanUp, metadata, Config):
         "test_col_3": ColumnType.Bytes.name
     }
 
-    Config.update(config_path, configs)
-
-    graph = Graph(name=name, graphs_folder=graphs_folder)
+    graph = Graph(name=name, graphs_folder=graphs_folder).updateConfigFile(new_config=configs)
 
     node_columns = graph.db.select_table_columns('node')
     assert len(node_columns) == len(configs), "the number of columns should match the provided config"
@@ -35,7 +34,7 @@ def test_graph_creation(cleanUp, metadata, Config):
     assert new_config == default_config | configs, "new config should match original config"
 
 @pytest.mark.integration
-def test_graph_invalid_config(cleanUp, metadata, Config):
+def test_graph_invalid_config(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
@@ -60,7 +59,7 @@ def test_graph_invalid_config(cleanUp, metadata, Config):
     assert new_config.get('id') == ColumnType.Integer.name, f"the new config should have an id column that is default {ColumnType.Integer.name}"
 
 @pytest.mark.integration
-def test_graph_custom_node_pk(cleanUp, metadata, Config):
+def test_graph_custom_node_pk(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
@@ -77,7 +76,7 @@ def test_graph_custom_node_pk(cleanUp, metadata, Config):
     assert new_config.get('id') == ColumnType.String.name, f"the new config should have an id column that is the provided {ColumnType.String.name}"
 
 @pytest.mark.integration
-def test_graph_mixed_config(cleanUp, metadata, Config):
+def test_graph_mixed_config(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
@@ -113,7 +112,7 @@ def test_graph_mixed_config(cleanUp, metadata, Config):
 
 
 @pytest.mark.integration
-def test_graph_retyping_unallowed(cleanUp, metadata, Config):
+def test_graph_retyping_unallowed(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"
@@ -129,7 +128,7 @@ def test_graph_retyping_unallowed(cleanUp, metadata, Config):
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
-    failed_configs = {
+    failed_configs: dict[str, str] = {
         "id": ColumnType.String.name,
         "test_col_1": ColumnType.Bytes.name,
         "test_col_2": ColumnType.Integer.name,
@@ -137,7 +136,7 @@ def test_graph_retyping_unallowed(cleanUp, metadata, Config):
     }
 
     Config.update(config_path, configs)
-    graph.updateTables()
+    _ = graph.updateTables()
 
     node_columns = graph.db.select_table_columns('node')
     assert len(node_columns) == len(configs), "the number of columns should match the original config"
@@ -151,7 +150,7 @@ def test_graph_retyping_unallowed(cleanUp, metadata, Config):
     assert new_config == configs | default_config, "new config should match updated config with a message attached"
 
 @pytest.mark.integration
-def test_graph_config_reinstated(cleanUp, metadata, Config):
+def test_graph_config_reinstated(cleanUp: Path, metadata: dict[str, str], Config):
     graphs_folder = cleanUp
     name = metadata['scenario']
     config_path = graphs_folder / name / "config.json"

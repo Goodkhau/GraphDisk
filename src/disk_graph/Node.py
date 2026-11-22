@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Self
+from typing import Literal, Self, overload
 
 from src.disk_graph.db.database_interface import database_interface
 
@@ -9,8 +9,15 @@ class Node:
         self.ptr: int = node_ptr
         self._db: database_interface = db
     
-    def value(self, use_dict_fact: bool = True) -> dict[str, str | int] | tuple[str | int] | None:
-        return self._db.select_node(self.ptr, use_dict_fact);
+    @overload
+    def value(self, use_dict_fact: Literal[False]) -> tuple[str | int]: ...
+    @overload
+    def value(self, use_dict_fact: Literal[True] = True) -> dict[str, str | int]: ...
+    def value(self, use_dict_fact: bool = True) -> dict[str, str | int] | tuple[str | int]:
+        node_row = self._db.select_node(self.ptr, use_dict_fact);
+        if node_row is None:
+            raise Exception(f"Failed to get Node from node_ptr: {self.ptr}")
+        return node_row
 
     def add(self, to_node: dict[str, str | int] | Node) -> Self:
         if isinstance(to_node, Node):

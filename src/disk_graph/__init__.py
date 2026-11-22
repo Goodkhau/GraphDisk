@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Self
+from typing import Literal, Self, overload
 from collections.abc import Generator
 import uuid
 from pathlib import Path
@@ -59,7 +59,7 @@ class Graph:
         for failed_col in failed_cols:
             _ = updated_config.pop(failed_col, None)
 
-        return self.updateConfigFile(updated_config)
+        return self.updateConfigFile(new_config=updated_config, update_tables=False)
 
     def ifConfigNotExists(self):
         if not self.config_path.exists():
@@ -67,7 +67,7 @@ class Graph:
             self.config_path.touch()
             _ = self.updateConfigFile({})
     
-    def updateConfigFile(self, new_config: dict[str, str], update_tables: bool = False):
+    def updateConfigFile(self, new_config: dict[str, str], update_tables: bool = True):
         try:
             self.ifConfigNotExists()
 
@@ -105,7 +105,11 @@ class Graph:
     def getNode(self, pk: int) -> Node | None:
         row = self.db.select_node(pk, False)
         return None if row == None else Node(node_ptr=row[0], db=self.db)
-    
+
+    @overload
+    def getAllNodeValuesByPage(self, page_size: int = 1000, *, use_dict_fact: Literal[False]) -> Generator[tuple[tuple[str | int]], None, None]: ...
+    @overload
+    def getAllNodeValuesByPage(self, page_size: int = 1000, use_dict_fact: Literal[True] = True) -> Generator[list[dict[str, str | int]], None, None]: ...
     def getAllNodeValuesByPage(self, page_size: int = 1000, use_dict_fact: bool = True) -> Generator[list[dict[str, str | int]] | tuple[tuple[str | int]], None, None]:
         return self.db.paginate_all_node_ptr(page_size, use_dict_fact)
     
