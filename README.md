@@ -31,11 +31,43 @@ str_graph = Graph(ColumnType.STRING)
 
 A slightly deeper example showing the most common real-world use case:
 
+### Linked List
 ```python
-from mypackage import Client
+graph = Graph(name="Linked List").updateConfigFile({
+    "index": ColumnType.Integer.name
+})
 
-client = Client(api_key="...")
-data = client.fetch("something")
+head = graph.createNode({"index": 0})
+
+(
+    last := head
+        .connect({"index": 1})
+        .connect({"index": 2})
+        .connect({"index": 3})
+        .connect({"index": 4})
+)
+```
+
+### Prefix Trie
+```python
+graph = Graph(name="Prefix Trie").updateConfigFile(
+    new_config = {
+        "word": ColumnType.String.name,
+        "layer": ColumnType.Integer.name
+    }
+)
+
+root_node = graph.createNode({"layer": 0})
+
+for sentence in sentences:
+    curr = root_node
+
+    words = sentence.split(' ')
+    for index in range(len(words)):
+        children = curr.children()
+        next_node = next((child for child in (children if children else []) if child.value().get('word') == words[index]), None)
+
+        curr = next_node if next_node else curr.connect(to_node={"word": words[index], "layer": index+1})
 ```
 
 ## Development
