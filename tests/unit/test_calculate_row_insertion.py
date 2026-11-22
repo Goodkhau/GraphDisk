@@ -1,8 +1,10 @@
+from typing import Any
+
 import pytest
 
 from src.disk_graph.db.pysqlite3 import calculateRowInsertion
 
-def check(case):
+def check(case: tuple[dict[str, Any], dict[str, Any]]):
     data, output = case
     new_columns, updated_config = calculateRowInsertion(data['columns'], data['row_data'])
     assert new_columns == output['placeholder']

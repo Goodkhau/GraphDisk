@@ -1,6 +1,3 @@
-from typing import Any
-
-
 from pathlib import Path
 import pytest
 import json
@@ -15,7 +12,7 @@ def _clean_graphs(config):
 def pytest_sessionstart(session):
     _clean_graphs(session.config)
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session):
     _clean_graphs(session.config)
 
 @pytest.fixture(scope="session")

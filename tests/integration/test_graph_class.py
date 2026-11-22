@@ -99,9 +99,8 @@ def test_graph_mixed_config(cleanUp: Path, metadata: dict[str, str], Config):
         "test_col_3": ColumnType.Bytes.name,
         "new_row": ColumnType.Integer.name
     }
-
-    Config.update(config_path, configs)
-    graph.updateTables()
+    
+    _ = graph.updateConfigFile(new_config=configs)
 
     node_columns = graph.db.select_table_columns('node')
     assert len(node_columns) == len(configs), "the number of columns should match the provided config"
@@ -124,19 +123,7 @@ def test_graph_retyping_unallowed(cleanUp: Path, metadata: dict[str, str], Confi
         "test_col_3": ColumnType.Bytes.name
     }
 
-    Config.update(config_path, configs)
-
-    graph = Graph(name=name, graphs_folder=graphs_folder)
-
-    failed_configs: dict[str, str] = {
-        "id": ColumnType.String.name,
-        "test_col_1": ColumnType.Bytes.name,
-        "test_col_2": ColumnType.Integer.name,
-        "test_col_3": ColumnType.Float.name
-    }
-
-    Config.update(config_path, configs)
-    _ = graph.updateTables()
+    graph = Graph(name=name, graphs_folder=graphs_folder).updateConfigFile(new_config=configs)
 
     node_columns = graph.db.select_table_columns('node')
     assert len(node_columns) == len(configs), "the number of columns should match the original config"
@@ -162,12 +149,9 @@ def test_graph_config_reinstated(cleanUp: Path, metadata: dict[str, str], Config
         "test_col_3": ColumnType.Bytes.name,
     }
 
-    Config.update(config_path, configs)
+    graph = Graph(name=name, graphs_folder=graphs_folder).updateConfigFile(new_config=configs)
 
-    graph = Graph(name=name, graphs_folder=graphs_folder)
-
-    Config.update(config_path, {})
-    graph.updateTables()
+    _ = graph.updateConfigFile(new_config={})
 
     node_columns = graph.db.select_table_columns('node')
     assert len(node_columns) == len(configs), "the number of columns should match the original config"

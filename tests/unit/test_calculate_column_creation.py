@@ -1,8 +1,10 @@
+from typing import Any
+
 import pytest
 
 from src.disk_graph import calculateColumnCreation
 
-def check(case):
+def check(case: tuple[dict[str, Any], dict[str, Any]]):
     data, output = case
     new_columns, updated_config = calculateColumnCreation(data['columns'], data['config'])
     assert new_columns == output['new_columns']

@@ -1,12 +1,13 @@
 import pytest
 
+from pathlib import Path
+
 from src.disk_graph import Graph
 
 @pytest.mark.integration
-def test_chain_adding_children(cleanUp, metadata):
+def test_chain_adding_children(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
@@ -31,10 +32,9 @@ def test_chain_adding_children(cleanUp, metadata):
         assert parents[0].value().get('id') == parent_id, "parent should be our expected id"
 
 @pytest.mark.integration
-def test_nested_children(cleanUp, metadata):
+def test_nested_children(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
@@ -69,18 +69,17 @@ def test_nested_children(cleanUp, metadata):
             assert len(parents_of_grand) == 1, "grand childs should have one parent"
             assert child == parents_of_grand[0], "child and parent of grand child should match"
 
-def test_duplicate_connection(cleanUp, metadata):
+def test_duplicate_connection(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name=name, graphs_folder=graphs_folder)
 
     node_one = graph.createNode({})
     node_two = graph.createNode({})
 
-    node_one.add(node_two).add(node_two)
-    node_one.add(node_two)
+    _ = node_one.add(node_two).add(node_two)
+    _ = node_one.add(node_two)
 
     children = node_one.children()
     assert len(children) == 1, "node one should only have one child"

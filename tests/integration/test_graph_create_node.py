@@ -8,7 +8,7 @@ from src.disk_graph import Graph
 from src.disk_graph.db.pysqlite3 import ColumnType
 
 @pytest.mark.integration
-def test_auto_incrementing(cleanUp: Path, metadata: dict[str, str], Config):
+def test_auto_incrementing(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
 
@@ -32,7 +32,7 @@ def test_auto_incrementing(cleanUp: Path, metadata: dict[str, str], Config):
         assert rows[i].get("cust_field") == test_str, "cust_field should be populated with test string"
 
 @pytest.mark.integration
-def test_auto_incrementing_passing_pk(cleanUp: Path, metadata: dict[str, str], Config):
+def test_auto_incrementing_passing_pk(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
     graph = Graph(name, graphs_folder=graphs_folder)
@@ -60,10 +60,9 @@ def test_auto_incrementing_passing_pk(cleanUp: Path, metadata: dict[str, str], C
         assert rows[first_segment+i].get("id") == nonincrementing_id+i, f"primary key should increment coninuing from {nonincrementing_id}"
     
 @pytest.mark.integration
-def test_integer_invalid_pk(cleanUp: Path, metadata: dict[str, str], Config):
+def test_integer_invalid_pk(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name, graphs_folder=graphs_folder)
 
@@ -72,12 +71,12 @@ def test_integer_invalid_pk(cleanUp: Path, metadata: dict[str, str], Config):
     valid_pk = "117"
 
     with pytest.raises(sqlite3.IntegrityError) as invalid_error_str:
-        graph.createNode({ "id": invalid_pk_str })
+        _ = graph.createNode({ "id": invalid_pk_str })
     
     assert invalid_error_str.type is sqlite3.IntegrityError
 
     with pytest.raises(sqlite3.IntegrityError) as invalid_pk_byte:
-        graph.createNode({ "id": invalid_pk_str })
+        _ = graph.createNode({ "id": invalid_pk_str })
     
     assert invalid_pk_byte.type is sqlite3.IntegrityError
 
@@ -91,10 +90,9 @@ def test_integer_invalid_pk(cleanUp: Path, metadata: dict[str, str], Config):
     assert rows[0].get("id") == int(valid_pk), "node should be populated"
 
 @pytest.mark.integration
-def test_duplicate_pk(cleanUp, metadata, Config):
+def test_duplicate_pk(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String)
 
@@ -107,10 +105,9 @@ def test_duplicate_pk(cleanUp, metadata, Config):
     assert len(rows) == 1, "only one node should exist"
 
 @pytest.mark.integration
-def test_string_empty_pk(cleanUp, metadata, Config):
+def test_string_empty_pk(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String)
 
@@ -133,10 +130,9 @@ def test_string_empty_pk(cleanUp, metadata, Config):
     assert white_space_row.get("id") == white_space, "white space string should have a row"
 
 @pytest.mark.integration
-def test_string_invalid_pk(cleanUp, metadata, Config):
+def test_string_invalid_pk(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
-    config_path = graphs_folder / name / "config.json"
 
     graph = Graph(name, graphs_folder=graphs_folder, node_pk_type=ColumnType.String)
 
@@ -144,7 +140,7 @@ def test_string_invalid_pk(cleanUp, metadata, Config):
     valid_pk = 23
 
     with pytest.raises(sqlite3.IntegrityError) as invalid_error:
-        graph.createNode({ "id": invalid_pk })
+        _ = graph.createNode({ "id": invalid_pk })  # pyright: ignore[reportArgumentType]
     
     assert invalid_error.type is sqlite3.IntegrityError
 
