@@ -70,6 +70,26 @@ for sentence in sentences:
         curr = next_node if next_node else curr.connect(to_node={"word": words[index], "layer": index+1})
 ```
 
+### Nested Nodes
+```python
+graph = Graph(name="Nested")
+
+(
+    node := graph.createNode({})
+        .add(graph.createNode({})
+            .add({}))
+        .add(graph.createNode({})
+            .add({})
+            .add({}))
+        .add(graph.createNode({})
+            .add({})
+            .add({})
+            .add({}))
+)
+
+# Creates a graph with 6 leaf nodes and a root with 3 children
+```
+
 ## Development
 
 ```bash
