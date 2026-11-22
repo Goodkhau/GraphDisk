@@ -1,0 +1,10 @@
+{
+    "new_columns": [{
+        "name": "new_column",
+        "type": "Integer"
+    }],
+    "updated_config": {
+        "id": "String",
+        "new_column": "Integer"
+    }
+}
