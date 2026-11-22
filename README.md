@@ -86,9 +86,8 @@ graph = Graph(name="Nested")
             .add({})
             .add({}))
 )
-
-# Creates a graph with 6 leaf nodes and a root with 3 children
 ```
+Creates a graph with 6 leaf nodes and a root with 3 children
 
 ## Development
 
