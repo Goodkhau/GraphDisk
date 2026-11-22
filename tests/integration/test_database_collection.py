@@ -4,7 +4,7 @@ import pytest
 
 from src.disk_graph import Graph
 
-@pytest.mark.pysqlite3_integration
+@pytest.mark.integration
 def test_collection_class(metadata: dict[str, str], cleanUp: Path):
     graphs_folder = cleanUp
     name = metadata['scenario']

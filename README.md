@@ -14,15 +14,9 @@ Light weight package for creating graphs on disk with a simple interface.
 ## Installation
 
 ```bash
-pip install disk-graph
-```
-
-For development:
-
-```bash
 git clone https://github.com/Goodkhau/GraphDisk.git
-cd mypackage
-pip install -e ".[dev]"
+cd my_project
+pip install "path to GraphDisk folder"
 ```
 
 ## Quick start
@@ -43,15 +37,6 @@ from mypackage import Client
 client = Client(api_key="...")
 data = client.fetch("something")
 ```
-
-For full documentation, see the [docs](https://you.github.io/mypackage) or the [examples/](examples/) folder.
-
-## Configuration
-
-| Option | Default | Description |
-|---|---|---|
-| `timeout` | `30` | Request timeout in seconds |
-| `retries` | `3` | Number of retry attempts |
 
 ## Development
 

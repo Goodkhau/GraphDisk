@@ -3,7 +3,7 @@ from pathlib import Path
 
 from src.disk_graph import Graph
 
-@pytest.mark.pysqlite3_integration
+@pytest.mark.integration
 def test_deque_push_back(metadata: dict[str, str], cleanUp: Path):
     graphs_folder = cleanUp
     name = metadata['scenario']
@@ -29,7 +29,7 @@ def test_deque_push_back(metadata: dict[str, str], cleanUp: Path):
     assert deque.front() == node_one, "front position should be 1"
     assert deque.back() == node_two, "back position should also be 2"
 
-@pytest.mark.pysqlite3_integration
+@pytest.mark.integration
 def test_deque_pop_front(metadata: dict[str, str], cleanUp: Path):
     graphs_folder = cleanUp
     name = metadata['scenario']
