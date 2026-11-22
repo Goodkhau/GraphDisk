@@ -2,7 +2,7 @@ import pytest
 
 from pathlib import Path
 
-from src.disk_graph import Graph
+from src.disk_graph import ColumnType, Graph
 
 @pytest.mark.integration
 def test_chain_adding_children(cleanUp: Path, metadata: dict[str, str]):
@@ -69,6 +69,7 @@ def test_nested_children(cleanUp: Path, metadata: dict[str, str]):
             assert len(parents_of_grand) == 1, "grand childs should have one parent"
             assert child == parents_of_grand[0], "child and parent of grand child should match"
 
+@pytest.mark.integration
 def test_duplicate_connection(cleanUp: Path, metadata: dict[str, str]):
     graphs_folder = cleanUp
     name = metadata['scenario']
@@ -88,3 +89,29 @@ def test_duplicate_connection(cleanUp: Path, metadata: dict[str, str]):
     parents = node_two.parents()
     assert len(parents) == 1, "node tow should only have one parent"
     assert node_one == parents[0], "the parent should be node one"
+
+@pytest.mark.integration
+def test_chaining_connect(cleanUp: Path, metadata: dict[str, str]):
+    graphs_folder = cleanUp
+    name = metadata['scenario']
+
+    graph = Graph(name=name, graphs_folder=graphs_folder).updateConfigFile({
+        "index": ColumnType.Integer.name
+    })
+
+    head = graph.createNode({"index": 0})
+
+    (
+        last := head
+            .connect({"index": 1})
+            .connect({"index": 2})
+            .connect({"index": 3})
+            .connect({"index": 4})
+    )
+
+    current = 0
+    curr_node = head
+    while curr_node != last:
+        assert curr_node.value().get("index") == current, "current node should be the correct index"
+        current += 1
+        curr_node = curr_node.children()[0]

@@ -27,6 +27,16 @@ class Node:
             _ = self._db.insert_edge(from_ptr=self.ptr, to_ptr=new_node_ptr)
 
         return self
+    
+    def connect(self, to_node: dict[str, str | int] | Node) -> Node:
+        if isinstance(to_node, Node):
+            _ = self._db.insert_edge(from_ptr=self.ptr, to_ptr=to_node.ptr)
+            to_node_ptr = to_node.ptr
+        else:
+            to_node_ptr = self._db.insert_node(to_node)
+            _ = self._db.insert_edge(from_ptr=self.ptr, to_ptr=to_node_ptr)
+
+        return Node(node_ptr=to_node_ptr, db=self._db)
 
     def children(self) -> list[Node]:
         return [Node(node_ptr=edge.to_node_ptr, db=self._db) for edge in self._db.select_edge_to_ptr(from_node_ptr=self.ptr)]
