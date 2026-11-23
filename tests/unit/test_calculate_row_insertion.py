@@ -1,3 +1,4 @@
+# pyright: reportAny=false
 from typing import Any
 
 import pytest

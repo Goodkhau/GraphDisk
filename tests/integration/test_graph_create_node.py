@@ -13,7 +13,7 @@ def test_auto_incrementing(cleanUp: Path, metadata: dict[str, str]):
     name = metadata['scenario']
 
     configs = {
-        "cust_field": ColumnType.String.name
+        "cust_field": ColumnType.String
     }
 
     graph = Graph(name, graphs_folder=graphs_folder).updateConfigFile(new_config=configs)

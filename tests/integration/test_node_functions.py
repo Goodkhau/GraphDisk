@@ -96,7 +96,7 @@ def test_chaining_connect(cleanUp: Path, metadata: dict[str, str]):
     name = metadata['scenario']
 
     graph = Graph(name=name, graphs_folder=graphs_folder).updateConfigFile({
-        "index": ColumnType.Integer.name
+        "index": ColumnType.Integer
     })
 
     head = graph.createNode({"index": 0})

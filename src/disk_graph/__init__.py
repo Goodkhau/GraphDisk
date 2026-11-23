@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Literal, Self, overload
-from collections.abc import Generator
+from collections.abc import Generator, Mapping
 import uuid
 from pathlib import Path
 
@@ -35,6 +35,14 @@ def calculateColumnCreation(existing_columns: list[dict[str, str]], existing_con
         { column['name']: column['type'] for column in present_columns + missing_columns }
     )
 
+def parseConfig(config: Mapping[str, str | ColumnType]) -> dict[str, str]:
+    return {
+        column_name: (
+            column_type.name if isinstance(column_type, ColumnType) else column_type
+        )
+        for column_name, column_type in config.items()
+    }
+
 class Graph:
     def __init__(self, name: str, node_pk_type: ColumnType = ColumnType.Integer, graphs_folder: Path = Path.cwd() / "graphs"):  # pyright: ignore[reportCallInDefaultInitializer]
         self.graph_path: Path = Path.joinpath(graphs_folder, name)
@@ -67,12 +75,13 @@ class Graph:
             self.config_path.touch()
             _ = self.updateConfigFile({})
     
-    def updateConfigFile(self, new_config: dict[str, str], update_tables: bool = True):
+    def updateConfigFile(self, new_config: Mapping[str, str | ColumnType], update_tables: bool = True) -> Self:
         try:
             self.ifConfigNotExists()
 
+            parsed_config = parseConfig(config=new_config)
             with open(file=self.config_path, mode="w") as file:
-                json.dump(default_config | new_config, file, indent=4)
+                json.dump(default_config | parsed_config, file, indent=4)
 
             return self.updateTables() if update_tables else self
         except json.JSONDecodeError as Error:
@@ -99,8 +108,8 @@ class Graph:
             raise Exception("Unexpected Error")
     
     def createNode(self, row_data: dict[str, str | int]) -> Node:
-        node_ptr_id = self.db.insert_node(row_data)
-        return Node(node_ptr=node_ptr_id, db=self.db)
+        node_ptr = self.db.insert_node(row_data)
+        return Node(node_ptr=node_ptr, db=self.db)
 
     def getNode(self, pk: int) -> Node | None:
         row = self.db.select_node(pk, False)
