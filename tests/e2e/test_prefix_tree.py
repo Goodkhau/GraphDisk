@@ -12,8 +12,8 @@ def test_prefix_tree(case: Generator[list[str]], metadata: dict[str, str], defau
 
     test_graph = Graph(name).updateConfigFile(
         new_config = {
-            "word": ColumnType.String.name,
-            "layer": ColumnType.Integer.name
+            "word": ColumnType.String,
+            "layer": ColumnType.Integer
         }
     )
 

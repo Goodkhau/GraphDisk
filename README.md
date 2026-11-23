@@ -24,7 +24,7 @@ pip install "path to GraphDisk folder"
 ```python
 from disk_graph import Graph, ColumnType
 
-str_graph = Graph(ColumnType.STRING)
+str_graph = Graph(ColumnType.String)
 ```
 
 ## Usage
@@ -34,7 +34,7 @@ A slightly deeper example showing the most common real-world use case:
 ### Linked List
 ```python
 graph = Graph(name="Linked List").updateConfigFile({
-    "index": ColumnType.Integer.name
+    "index": ColumnType.Integer
 })
 
 head = graph.createNode({"index": 0})
@@ -52,8 +52,8 @@ head = graph.createNode({"index": 0})
 ```python
 graph = Graph(name="Prefix Trie").updateConfigFile(
     new_config = {
-        "word": ColumnType.String.name,
-        "layer": ColumnType.Integer.name
+        "word": ColumnType.String,
+        "layer": ColumnType.Integer
     }
 )
 
