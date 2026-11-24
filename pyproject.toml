@@ -14,7 +14,7 @@ authors = [{ name = "Go Khai", email = "gos.khai12@gmail.com" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest", "nox"]
+dev = ["pytest", "nox", "pytest-xdist"]
 
 [project.urls]
 Homepage = "https://github.com/Goodkhau/GraphDisk"
