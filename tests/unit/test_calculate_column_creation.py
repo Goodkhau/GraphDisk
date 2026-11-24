@@ -12,7 +12,6 @@ def check(case: tuple[dict[str, Any], dict[str, Any]]):
 
 @pytest.mark.unit
 def test_empty_config(case):
-    raise Exception()
     check(case)
 
 @pytest.mark.unit
